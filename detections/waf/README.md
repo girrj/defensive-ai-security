@@ -1,6 +1,6 @@
 # WAF rules (ModSecurity, alongside OWASP CRS)
 
-`modsecurity/blue-team-waf.conf`: 9 targeted rules (IDs 1009101–1009109) meant to run **with** the OWASP Core Rule Set, not instead of it. CRS provides broad generic coverage. These rules add high-confidence blocks for patterns seen in real incidents and response-side inspection.
+`modsecurity/blue-team-waf.conf`: 14 targeted rules (IDs 1009101–1009109 and 1009120–1009124) meant to run **with** the OWASP Core Rule Set, not instead of it. CRS provides broad generic coverage. These rules add high-confidence blocks for patterns seen in real incidents and response-side inspection.
 
 | ID | Detects | Action |
 | --- | --- | --- |
@@ -13,12 +13,17 @@
 | 1009107 | Scanner user agents | Log + anomaly score |
 | 1009108 | Cloud metadata addresses in parameters (SSRF) | Deny 403 |
 | 1009109 | Command output or `/etc/passwd` content in a **response** | Deny 500 |
+| 1009120 | LLM model management endpoints (`/api/pull`, `create`, `delete`, …) through the proxy | Deny 403 |
+| 1009121 | LLM inference or model-list request without an `Authorization` header | Deny 401 |
+| 1009122 | Prompt-injection phrasing in LLM API requests | Log + anomaly score |
+| 1009123 | Oversized request body to an LLM endpoint (> 2 MB, tune it) | Deny 413 |
+| 1009124 | Helper: exposes JSON bodies of LLM requests as `REQUEST_BODY` (`ctl:forceRequestBodyVariable`) | — |
 
 Rule 1009109 is the safety net. It catches a web shell that was planted before these rules existed, at the moment it returns output.
 
 ## Tests
 
-`tests/run_tests.sh` starts a throwaway Apache + ModSecurity 2 instance on localhost, sends 13 attack requests and 3 benign ones, and checks the HTTP status and the rule ID in the log for each.
+`tests/run_tests.sh` starts a throwaway Apache + ModSecurity 2 instance on localhost, sends 18 attack requests and 4 benign ones (including an authenticated LLM request), and checks the HTTP status and the rule ID in the log for each.
 
 ```bash
 sudo apt-get install apache2 libapache2-mod-security2

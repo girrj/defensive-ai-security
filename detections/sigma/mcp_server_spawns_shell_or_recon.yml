@@ -1,0 +1,75 @@
+title: MCP Server Process Spawns Shell or Reconnaissance Utility
+id: 8e97a539-fa9d-4315-ba7c-aec4c441fe65
+status: experimental
+description: |
+  Detects a Model Context Protocol (MCP) server process starting a command
+  shell or a reconnaissance utility. Most MCP servers (file, git, database,
+  and SaaS connectors) have no reason to start shells. A shell or `whoami`
+  under one suggests a malicious or compromised server from the agent tool
+  supply chain, or a tool-poisoning or prompt-injection attack driving the
+  server's command execution.
+  MCP servers are usually launched by an AI client through npx, uvx, node,
+  python, or docker, with "mcp" in the package or script name. That is what
+  the parent selection matches.
+references:
+  - https://modelcontextprotocol.io/specification
+author: girrj
+date: 2026-11-14
+tags:
+  - attack.execution
+  - attack.t1059
+  - attack.discovery
+  - attack.t1082
+  - attack.t1195.002
+logsource:
+  category: process_creation
+detection:
+  selection_parent_runtime:
+    ParentImage|endswith:
+      - '\node.exe'
+      - '\npx.cmd'
+      - '\python.exe'
+      - '\pythonw.exe'
+      - '\uv.exe'
+      - '\uvx.exe'
+      - '\deno.exe'
+      - '\bun.exe'
+      - '/node'
+      - '/python'
+      - '/python3'
+      - '/uv'
+      - '/uvx'
+      - '/deno'
+      - '/bun'
+  selection_parent_mcp:
+    ParentCommandLine|contains:
+      - '@modelcontextprotocol/'
+      - 'mcp-server'
+      - 'mcp_server'
+      - 'server-mcp'
+      - '-mcp '
+      - 'fastmcp'
+      - 'mcp run '
+  selection_child:
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\whoami.exe'
+      - '\net.exe'
+      - '\net1.exe'
+      - '\nltest.exe'
+      - '\systeminfo.exe'
+      - '\certutil.exe'
+      - '/sh'
+      - '/bash'
+      - '/zsh'
+      - '/whoami'
+      - '/id'
+      - '/uname'
+      - '/hostname'
+  condition: all of selection_*
+falsepositives:
+  - MCP servers whose purpose is command execution (terminal, shell, or dev-container servers). Inventory them and exclude by exact package name.
+  - Servers that start a shell only to resolve PATH or launch a helper. Baseline the exact command lines.
+level: medium

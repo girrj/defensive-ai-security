@@ -1,6 +1,6 @@
 # Defensive AI Security
 
-A blue-team toolkit for running a SOC or CERT. It covers detection engineering across IDS, WAF, EDR, NDR, and SIEM, plus incident response, forensics, vulnerability and zero-day response, and guidelines for using LLMs safely in that work.
+A blue-team toolkit for running a SOC or CERT. It covers detection engineering across IDS, WAF, EDR, NDR, and SIEM, plus incident response, forensics, vulnerability and zero-day response, **defending AI systems** (LLM applications, agents, MCP servers, model infrastructure), and guidelines for using LLMs safely in that work.
 
 Maintained by a security operations practitioner with more than ten years in enterprise SOCs, CERT work, and managed security services.
 
@@ -10,12 +10,13 @@ Maintained by a security operations practitioner with more than ten years in ent
 
 | Area | Contents |
 | --- | --- |
-| [**detections/**](detections/) | **Sigma** (14 rules), **Suricata IDS** (19 rules), **ModSecurity WAF** (9 rules), **YARA** (4 rules), **Google SecOps YARA-L** (2 rules), all tested |
+| [**detections/**](detections/) | **Sigma** (17 rules), **Suricata IDS** (25 rules), **ModSecurity WAF** (14 rules), **YARA** (12 rules), **Google SecOps YARA-L** (2 rules), all tested |
+| [**ai-security/**](ai-security/) | **Defending AI systems**: OWASP LLM Top 10 **2026**, OWASP Agentic Top 10 2026, and MITRE ATLAS mapped to detections; LLM infrastructure hardening; MCP security checklist; a map of open-source defensive AI tools |
 | [**edr/**](edr/) | EDR operations: measuring coverage, a triage method, response actions and when to use them, tuning without losing coverage |
 | [**ndr/**](ndr/) | `zeek_hunt.py` for beaconing and DNS-tunneling detection over Zeek logs, plus a network hunting guide |
 | [**hunting/**](hunting/) | Hunting queries for Google SecOps (UDM) and Splunk (SPL) |
 | [**ir-manual/**](ir-manual/) | **Incident response manual**: roles, severity, the response process (NIST SP 800-61r3), communication, **Korean legal reporting (Network Act 24h, PIPA 72h)**, readiness |
-| [**playbooks/**](playbooks/) | Zero-day / emergency vulnerability response, web shell compromise, ransomware precursors, AI coding agent incidents |
+| [**playbooks/**](playbooks/) | Zero-day / emergency vulnerability response, web shell compromise, ransomware precursors, **LLM application / agent compromise**, AI coding agent incidents |
 | [**forensics/**](forensics/) | Windows, Linux, and memory artifact guides, evidence handling and chain of custody, **read-only live-response collection scripts** (Bash, PowerShell) |
 | [**soc-operations/**](soc-operations/) | Alert triage standard, detection engineering lifecycle, shift handover and incident report templates |
 | [**vuln-triage/**](vuln-triage/) | `cve_triage.py`: CVE prioritization from CISA KEV, EPSS, and exposure |
@@ -40,6 +41,9 @@ Maintained by a security operations practitioner with more than ten years in ent
 | Exfiltration | T1567 to web services | | ✅ | | |
 | Impact | T1490 recovery inhibition, T1496 mining, T1485 destruction | ✅ | ✅ | | ✅ ✅ |
 | AI agent misuse | Destructive commands, credential access, control tampering by AI coding agents | ✅ | | | ✅ |
+| AI: prompt injection | Instruction overrides, hidden HTML/CSS instructions, Unicode tag smuggling (AML.T0051, AML.T0068) | | | ✅ | ✅ |
+| AI: exposed model servers | External access to Ollama/OpenAI-compatible APIs, model tampering, unauthenticated inference (AML.T0040, AML.T0010) | ✅ | ✅ | ✅ | |
+| AI: MCP / agent supply chain | MCP servers spawning shells, downloading payloads, reading credentials; malicious pickle model files | ✅ | | | ✅ |
 
 ## How everything is tested
 
@@ -48,8 +52,8 @@ Every push runs [CI](.github/workflows/validate.yml):
 | Check | What it proves |
 | --- | --- |
 | pySigma validation + Splunk conversion, duplicate-key check | Sigma rules parse, convert, and don't silently drop conditions |
-| YARA compile + positive and negative samples | YARA rules compile and separate web shells from normal pages |
-| **Suricata pcap replay** | Each IDS rule fires on synthetic attack traffic, and benign sessions raise no alerts |
+| YARA tests on generated samples | Every YARA rule has a positive test and benign negatives: web shells, miners, prompt injection (including UTF-16 and invisible Unicode), and malicious pickles for every protocol version (built, never loaded) |
+| **Suricata pcap replay** | Each scenario raises exactly its expected SIDs, no more and no fewer, and benign sessions (including an authenticated LLM call) raise none |
 | **Live Apache + ModSecurity** | Each WAF rule blocks or scores the attack request, and benign requests pass |
 | Python unit tests | `cve_triage`, `ioc_extract`, `zeek_hunt`, and the LLM eval harness |
 | shellcheck, PowerShell parser + PSScriptAnalyzer | The collection scripts are well-formed |
@@ -78,6 +82,10 @@ sudo forensics/collect/collect_linux.sh -o /mnt/usb -c IR-001
 
 # Scan a web root for web shells
 yara -r detections/yara/webshell_generic.yar /var/www/
+
+# Scan model files before loading them, and documents before RAG ingestion
+yara -r detections/yara/malicious_model_pickle.yar /models/
+yara -r detections/yara/prompt_injection.yar ./to-ingest/
 
 # Evaluate an LLM against the SOC assistant guidelines
 python3 llm-guidelines/eval/run_eval.py llm-guidelines/eval/cases.jsonl responses.jsonl

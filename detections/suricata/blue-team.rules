@@ -64,3 +64,21 @@ alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"BLUETEAM Large HTTP POST to 
 # ---------------------------------------------------------------------------
 
 alert smb $HOME_NET any -> $HOME_NET 445 (msg:"BLUETEAM PsExec-style service binary written to ADMIN$"; flow:established,to_server; smb.share; content:"ADMIN$"; nocase; classtype:attempted-admin; metadata:mitre_technique_id T1021.002, mitre_technique_id T1569.002, created_at 2026_11_14, confidence Low; sid:9100050; rev:1;)
+
+# ---------------------------------------------------------------------------
+# AI / LLM infrastructure: exposed model servers and API abuse
+# OWASP LLM Top 10 2026: LLM04 Supply Chain, LLM06 Unbounded Consumption
+# MITRE ATLAS: AML.T0040 AI Model Inference API Access, AML.T0010 AI Supply Chain Compromise
+# ---------------------------------------------------------------------------
+
+alert http $EXTERNAL_NET any -> $HOME_NET 11434 (msg:"BLUETEAM External access to Ollama API (exposed local LLM server)"; flow:established,to_server; http.uri; content:"/api/"; startswith; fast_pattern; classtype:policy-violation; metadata:mitre_technique_id T1190, atlas_technique_id AML.T0040, created_at 2026_11_14, confidence High; sid:9100100; rev:1;)
+
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"BLUETEAM External request to Ollama model management endpoint (pull/create/delete/copy/push)"; flow:established,to_server; http.uri; pcre:"/^\/api\/(pull|create|delete|copy|push)\b/"; classtype:attempted-admin; metadata:atlas_technique_id AML.T0010, created_at 2026_11_14, confidence High; sid:9100101; rev:1;)
+
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"BLUETEAM External enumeration of LLM models (OpenAI-compatible or Ollama)"; flow:established,to_server; http.method; content:"GET"; http.uri; pcre:"/^\/(v1\/models|api\/tags|api\/ps)\/?(\?|$)/"; classtype:attempted-recon; metadata:mitre_technique_id T1595, atlas_technique_id AML.T0040, created_at 2026_11_14, confidence Medium; sid:9100102; rev:1;)
+
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"BLUETEAM Unauthenticated external LLM completion request (OpenAI-compatible API)"; flow:established,to_server; http.method; content:"POST"; http.uri; pcre:"/^\/v1\/(chat\/completions|completions|embeddings|responses)\b/"; http.header_names; content:!"Authorization"; nocase; classtype:policy-violation; metadata:atlas_technique_id AML.T0040, owasp_llm LLM06_2026, created_at 2026_11_14, confidence Medium; sid:9100103; rev:1;)
+
+alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"BLUETEAM LLM server returned model inventory to external client"; flow:established,to_client; http.response_body; content:"|22|models|22|"; content:"|22|modified_at|22|"; distance:0; classtype:successful-recon-limited; metadata:atlas_technique_id AML.T0040, created_at 2026_11_14, confidence High; sid:9100104; rev:1;)
+
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"BLUETEAM Scanning for LLM endpoints across hosts"; flow:established,to_server; http.uri; pcre:"/^\/(v1\/models|api\/tags|api\/version)\/?$/"; threshold:type threshold, track by_src, count 5, seconds 60; classtype:attempted-recon; metadata:mitre_technique_id T1595.002, created_at 2026_11_14, confidence Medium; sid:9100105; rev:1;)

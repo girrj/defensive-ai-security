@@ -42,14 +42,8 @@ jobs:
           sys.exit(bad)
           EOF
 
-      - name: YARA rules
-        run: |
-          python - <<'EOF'
-          import glob, yara
-          for f in sorted(glob.glob("detections/yara/*.yar")):
-              yara.compile(filepath=f)
-              print("ok   " + f)
-          EOF
+      - name: YARA rules (compile + sample tests)
+        run: python -m unittest discover -s detections/yara/tests -v
 
       - name: Suricata rules (load + pcap replay)
         run: detections/suricata/tests/run_tests.sh

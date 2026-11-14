@@ -43,16 +43,23 @@ suricata -c "$WORK/suricata.yaml" -S "$RULES" -r "$WORK/test.pcap" -l "$WORK" -k
 
 python3 - "$WORK/expected.json" "$WORK/eve.json" <<'EOF'
 import json, sys
+from collections import defaultdict
 expected = json.load(open(sys.argv[1]))
-fired = {json.loads(l)["alert"]["signature_id"] for l in open(sys.argv[2]) if '"alert"' in l}
-want = {sid for sids in expected.values() for sid in sids}
-missing, unexpected = sorted(want - fired), sorted(fired - want)
-for name, sids in expected.items():
-    status = "ok  " if set(sids) <= fired else "FAIL"
-    print(f"{status} {name}: expected {sids or 'no alerts'}")
-print(f"\nfired: {sorted(fired)}")
-if missing or unexpected:
-    print(f"missing: {missing}  unexpected: {unexpected}")
-    sys.exit(1)
-print("PASS")
+by_port = defaultdict(set)
+for line in open(sys.argv[2]):
+    ev = json.loads(line)
+    if ev.get("event_type") != "alert":
+        continue
+    for port in (ev.get("src_port"), ev.get("dest_port")):
+        by_port[port].add(ev["alert"]["signature_id"])
+fail = 0
+for name, spec in expected.items():
+    fired = set().union(*(by_port.get(p, set()) for p in spec["ports"])) if spec["ports"] else set()
+    want = set(spec["sids"])
+    ok = fired == want
+    fail += not ok
+    detail = "" if ok else f"  -> fired {sorted(fired)}, missing {sorted(want - fired)}, unexpected {sorted(fired - want)}"
+    print(f"{'ok  ' if ok else 'FAIL'} {name}: expected {spec['sids'] or 'no alerts'}{detail}")
+print("PASS" if not fail else f"FAILED ({fail} scenario(s))")
+sys.exit(1 if fail else 0)
 EOF

@@ -21,14 +21,27 @@ SERVER_EXT = "203.0.113.50"    # TEST-NET-3, "internet"
 DNS_SRV = "10.10.0.53"
 
 packets = []
-expected = {}
 _sport = [40000]
+_pending_ports = []
+
+
+class Expected(dict):
+    """expected[name] = [sids] records the client ports of every session built
+    since the previous assignment, so alerts can be checked per scenario."""
+
+    def __setitem__(self, name, sids):
+        super().__setitem__(name, {"sids": sids, "ports": list(_pending_ports)})
+        _pending_ports.clear()
+
+
+expected = Expected()
 
 
 def tcp_session(src, dst, dport, request: bytes, response: bytes = b""):
     """Three-way handshake, one request, optional response, FIN."""
     _sport[0] += 1
     sport = _sport[0]
+    _pending_ports.append(sport)
     c_seq, s_seq = 1000, 5000
     pk = [
         IP(src=src, dst=dst) / TCP(sport=sport, dport=dport, flags="S", seq=c_seq),
@@ -124,6 +137,7 @@ expected["stratum_subscribe"] = [9100031]
 
 # 9100032: mining pool DNS
 packets.append(IP(src=HOST_INT, dst=DNS_SRV) / UDP(sport=53001, dport=53) / DNS(id=1, rd=1, qd=DNSQR(qname="pool.supportxmr.com")))
+_pending_ports.append(53001)
 expected["mining_dns"] = [9100032]
 
 # 9100041: TLS to dynamic DNS (minimal ClientHello with SNI)
@@ -140,10 +154,41 @@ def client_hello(sni: str) -> bytes:
 tcp_session(HOST_INT, SERVER_EXT, 443, client_hello("c2-relay.duckdns.org"))
 expected["tls_dyndns"] = [9100041]
 
+# --- AI / LLM infrastructure -------------------------------------------------
+LLM_SRV = "10.10.30.40"
+OLLAMA_TAGS = b'{"models":[{"name":"example-model:8b","modified_at":"2026-11-01T00:00:00Z","size":1}]}'
+
+# 9100100 + 9100102 + 9100104: external GET /api/tags on 11434 returns the model inventory
+tcp_session(CLIENT_EXT, LLM_SRV, 11434, http_req("GET", "/api/tags", "llm.example"),
+            http_resp(OLLAMA_TAGS, "application/json"))
+expected["ollama_tags_exposed"] = [9100100, 9100102, 9100104]
+
+# 9100100 + 9100101: external model pull
+tcp_session(CLIENT_EXT, LLM_SRV, 11434, http_req("POST", "/api/pull", "llm.example",
+            {"Content-Type": "application/json"}, b'{"model":"attacker/backdoored-model"}'),
+            http_resp(b'{"status":"success"}', "application/json"))
+expected["ollama_pull"] = [9100100, 9100101]
+
+# 9100103: unauthenticated chat completion on an OpenAI-compatible server (port 8000)
+tcp_session(CLIENT_EXT, LLM_SRV, 8000, http_req("POST", "/v1/chat/completions", "llm.example",
+            {"Content-Type": "application/json"}, b'{"model":"m","messages":[{"role":"user","content":"hi"}]}'),
+            http_resp(b'{"choices":[]}', "application/json"))
+expected["openai_unauth_completion"] = [9100103]
+
+# 9100105 (+9100102): one source probing /v1/models on six hosts
+for i in range(6):
+    tcp_session("198.51.100.77", f"10.10.31.{i + 1}", 8000, http_req("GET", "/v1/models", "llm.example"),
+                http_resp(b'{"data":[]}', "application/json"))
+expected["llm_endpoint_scan"] = [9100102, 9100105]
+
 # Benign controls: must trigger nothing from this rule set
 tcp_session(CLIENT_EXT, SERVER_INT, 80, http_req("GET", "/index.html?page=2", "app.example",
             {"User-Agent": "Mozilla/5.0"}), http_resp(b"<html>hello</html>"))
 tcp_session(HOST_INT, SERVER_EXT, 443, client_hello("www.example.com"))
+# Authenticated completion request from outside: must NOT trigger 9100103
+tcp_session(CLIENT_EXT, LLM_SRV, 8000, http_req("POST", "/v1/chat/completions", "llm.example",
+            {"Content-Type": "application/json", "Authorization": "Bearer test-token-placeholder"},
+            b'{"model":"m","messages":[]}'), http_resp(b'{"choices":[]}', "application/json"))
 expected["benign_controls"] = []
 
 if __name__ == "__main__":
