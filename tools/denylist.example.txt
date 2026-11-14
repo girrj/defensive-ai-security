@@ -1,0 +1,6 @@
+# One term per line, matched case-insensitively as a fixed string.
+# Copy this file to denylist.local.txt (git-ignored) and replace the examples.
+example-corp
+example-customer
+corp.example.internal
+CASE-#

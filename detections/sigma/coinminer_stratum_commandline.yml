@@ -1,0 +1,39 @@
+title: Coin Miner Started With Stratum Pool Arguments
+id: fd79a148-76e7-4adb-b3e5-9d170bda5fa0
+status: experimental
+description: |
+  Detects processes started with command-line arguments typical of XMRig and
+  similar CPU miners: a stratum pool URL, a donate-level flag, or common
+  miner tuning options. Cryptojacking is often the first payload dropped after
+  exploitation of an internet-facing server, and the miner usually reaches out
+  to the pool directly from the compromised host or through its egress gateway.
+author: girrj
+date: 2026-11-14
+tags:
+  - attack.impact
+  - attack.t1496
+logsource:
+  category: process_creation
+detection:
+  selection_pool:
+    CommandLine|contains:
+      - 'stratum+tcp://'
+      - 'stratum+ssl://'
+      - 'stratum2+tcp://'
+  selection_xmrig_flags:
+    CommandLine|contains:
+      - '--donate-level'
+      - '--randomx-1gb-pages'
+      - '--cpu-max-threads-hint'
+      - '--nicehash'
+  selection_algo:
+    CommandLine|contains:
+      - '-a rx/0'
+      - '--algo=rx/0'
+      - '--algo rx/0'
+      - '--coin=monero'
+      - '--coin monero'
+  condition: 1 of selection_*
+falsepositives:
+  - Authorized mining or benchmarking hosts.
+level: high

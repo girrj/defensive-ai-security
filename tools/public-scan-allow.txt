@@ -1,0 +1,10 @@
+# Paths excluded from the private-IP check in check-public.sh, one git pathspec per line.
+# Only list files whose private addresses are synthetic test or example data.
+tools/check-public.sh
+tools/ioc_extract.py
+tools/tests/
+detections/suricata/tests/
+ndr/tests/
+llm-guidelines/examples.md
+llm-guidelines/eval/
+llm-guidelines/training/

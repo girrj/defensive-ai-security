@@ -1,0 +1,52 @@
+title: Built-in Windows Binary Used to Download or Run Remote Content
+id: f8fd710f-5e0b-4e90-8495-e4baa24a0751
+status: experimental
+description: |
+  Detects signed Windows binaries (LOLBins) used to fetch or run remote
+  payloads: certutil URL cache downloads, bitsadmin transfers, mshta and
+  regsvr32 loading remote scripts, and rundll32 running JavaScript. Attackers
+  rely on these because application allow-listing usually trusts them.
+author: girrj
+date: 2026-11-14
+tags:
+  - attack.defense-evasion
+  - attack.t1218
+  - attack.command-and-control
+  - attack.t1105
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  certutil_img:
+    Image|endswith: '\certutil.exe'
+    CommandLine|contains:
+      - 'urlcache'
+      - 'verifyctl'
+  certutil_url:
+    CommandLine|contains:
+      - 'http://'
+      - 'https://'
+  selection_bitsadmin:
+    Image|endswith: '\bitsadmin.exe'
+    CommandLine|contains: '/transfer'
+  selection_mshta:
+    Image|endswith: '\mshta.exe'
+    CommandLine|contains:
+      - 'http://'
+      - 'https://'
+      - 'javascript:'
+      - 'vbscript:'
+  selection_regsvr32:
+    Image|endswith: '\regsvr32.exe'
+    CommandLine|contains|all:
+      - '/i:'
+      - 'scrobj.dll'
+  selection_rundll32_js:
+    Image|endswith: '\rundll32.exe'
+    CommandLine|contains|all:
+      - 'javascript:'
+      - 'RunHTMLApplication'
+  condition: (certutil_img and certutil_url) or 1 of selection_*
+falsepositives:
+  - Legacy software installers that use bitsadmin. Exclude by the parent image of the installer.
+level: high

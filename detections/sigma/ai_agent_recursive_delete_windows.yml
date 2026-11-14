@@ -1,0 +1,44 @@
+title: AI Coding Agent Spawns Recursive Delete Command
+id: a6bd3872-695a-4d4e-af56-1fd34d007686
+status: experimental
+description: |
+  Detects a shell started by an AI coding agent (Claude Code or Codex CLI) that runs
+  a recursive or forced delete. Agents that run with the developer's privileges
+  can destroy source trees, backups, or home directories when they misread a
+  request or follow injected instructions. Endpoint telemetry still records
+  these commands when the agent's own permission prompts are turned off.
+author: girrj
+date: 2026-11-14
+tags:
+  - attack.impact
+  - attack.t1485
+  - attack.t1070.004
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\claude.exe'
+      - '\codex.exe'
+  selection_shell:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cmd.exe'
+      - '\bash.exe'
+  cmd_ps_recurse:
+    CommandLine|contains|all:
+      - 'Remove-Item'
+      - '-Recurse'
+  cmd_ps_alias:
+    CommandLine|re: '(?i)\b(rm|rmdir|del|ri|rd)\b.*\s-(r|recurse)\b'
+  cmd_cmd:
+    CommandLine|re: '(?i)\b(rmdir|rd)\s+/s\b|\bdel\s+(/[a-z]\s+)*/s\b'
+  cmd_posix:
+    CommandLine|re: '\brm\s+-[a-zA-Z]*r[a-zA-Z]*f|\brm\s+-[a-zA-Z]*f[a-zA-Z]*r'
+  condition: selection_parent and selection_shell and 1 of cmd_*
+falsepositives:
+  - Agents legitimately cleaning build output (node_modules, dist, bin, obj, target, .venv). Tune with a CommandLine exclusion for known build directories.
+  - Developers who routinely ask agents to delete scratch folders.
+level: medium

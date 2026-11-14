@@ -1,0 +1,40 @@
+rule ai_agent_destructive_command {
+
+  meta:
+    author = "girrj"
+    description = "An AI coding agent (Claude Code or Codex CLI) starts a shell that runs a recursive delete, a force-push, or a Defender tampering command"
+    severity = "MEDIUM"
+    priority = "MEDIUM"
+    mitre_attack_tactic = "Impact, Defense Evasion"
+    mitre_attack_technique = "T1485, T1562.001"
+    created = "2026-11-14"
+
+  events:
+    $e.metadata.event_type = "PROCESS_LAUNCH"
+    re.regex($e.principal.process.file.full_path, `(?i)[\\/](claude|codex)(\.exe)?$`)
+    (
+      re.regex($e.target.process.command_line, `(?i)remove-item.+-recurse`) or
+      re.regex($e.target.process.command_line, `(?i)\b(rmdir|rd)\s+/s\b`) or
+      re.regex($e.target.process.command_line, `\brm\s+-[a-zA-Z]*(rf|fr)`) or
+      re.regex($e.target.process.command_line, `(?i)git\s+push\s+.*(--force|-f\b)`) or
+      re.regex($e.target.process.command_line, `(?i)set-mppreference.+disable(realtime|behavior)monitoring`)
+    )
+    $host = $e.principal.hostname
+    $user = $e.principal.user.userid
+
+  match:
+    $host, $user over 10m
+
+  outcome:
+    $risk_score = max(
+      if(re.regex($e.target.process.command_line, `(?i)set-mppreference`), 85, 0) +
+      if(re.regex($e.target.process.command_line, `(?i)(remove-item.+-recurse|rmdir|rm\s+-)`), 60, 0) +
+      if(re.regex($e.target.process.command_line, `(?i)git\s+push`), 40, 0)
+    )
+    $event_count = count_distinct($e.metadata.id)
+    $commands = array_distinct($e.target.process.command_line)
+    $agent = array_distinct($e.principal.process.file.full_path)
+
+  condition:
+    $e
+}

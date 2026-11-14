@@ -1,0 +1,42 @@
+title: LSASS Memory Dump via Built-in or Common Tools
+id: 0e9953dc-d387-4064-a04f-c0ed42ed484d
+status: experimental
+description: |
+  Detects command lines that dump LSASS memory with tools an attacker can
+  usually find already on the host (comsvcs.dll MiniDump through rundll32,
+  ProcDump) or with well-known dumping tools. A dump of LSASS gives the
+  attacker credentials for every user logged on to that host.
+author: girrj
+date: 2026-11-14
+tags:
+  - attack.credential-access
+  - attack.t1003.001
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_comsvcs:
+    Image|endswith: '\rundll32.exe'
+    CommandLine|contains: 'comsvcs'
+    CommandLine|contains|all:
+      - 'MiniDump'
+  selection_comsvcs_ordinal:
+    Image|endswith: '\rundll32.exe'
+    CommandLine|contains|all:
+      - 'comsvcs'
+      - '#24'
+  selection_procdump:
+    CommandLine|contains:
+      - ' -ma lsass'
+      - ' -ma -accepteula lsass'
+      - ' /ma lsass'
+  selection_tools:
+    CommandLine|contains:
+      - 'sekurlsa::'
+      - 'lsadump::'
+      - 'nanodump'
+      - 'MiniDumpWriteDump'
+  condition: 1 of selection_*
+falsepositives:
+  - Authorized troubleshooting by Microsoft support or the Windows team. This should be rare and announced in advance.
+level: high

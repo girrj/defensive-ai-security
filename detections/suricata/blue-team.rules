@@ -1,0 +1,66 @@
+# Blue-team Suricata rules
+# Author:  girrj
+# License: MIT
+# SID range: 9100001-9100999 (local rules). Re-number if this collides with your local range.
+# Requires Suricata 7.x. Variables: $HOME_NET, $EXTERNAL_NET, $HTTP_SERVERS.
+#
+# Every rule carries: classtype, MITRE metadata, a created date, and a
+# confidence level so the SOC can route alerts by expected precision.
+
+# ---------------------------------------------------------------------------
+# Initial access: exploitation attempts against web services
+# ---------------------------------------------------------------------------
+
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"BLUETEAM JNDI lookup string in HTTP request (Log4Shell-style)"; flow:established,to_server; http.request_line; content:"${jndi:"; nocase; fast_pattern; classtype:attempted-admin; reference:cve,2021-44228; metadata:mitre_technique_id T1190, created_at 2026_11_14, confidence High; sid:9100001; rev:1;)
+
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"BLUETEAM JNDI lookup string in HTTP header (Log4Shell-style)"; flow:established,to_server; http.header; content:"${jndi:"; nocase; fast_pattern; classtype:attempted-admin; reference:cve,2021-44228; metadata:mitre_technique_id T1190, created_at 2026_11_14, confidence High; sid:9100002; rev:1;)
+
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"BLUETEAM Obfuscated JNDI lookup in HTTP request"; flow:established,to_server; http.request_line; pcre:"/\$\{(\$\{(lower|upper|env|::-)[^}]*\}){2,}/i"; classtype:attempted-admin; reference:cve,2021-44228; metadata:mitre_technique_id T1190, created_at 2026_11_14, confidence Medium; sid:9100003; rev:1;)
+
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"BLUETEAM Path traversal to sensitive OS file in URI"; flow:established,to_server; http.uri; content:"../"; pcre:"/(\.\.\/){2,}.*(etc\/passwd|etc\/shadow|win\.ini|boot\.ini|web\.config)/i"; classtype:web-application-attack; metadata:mitre_technique_id T1190, created_at 2026_11_14, confidence Medium; sid:9100004; rev:1;)
+
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"BLUETEAM Java class-loader manipulation parameter (Spring4Shell-style)"; flow:established,to_server; http.request_body; content:"class.module.classLoader"; nocase; fast_pattern; classtype:attempted-admin; reference:cve,2022-22965; metadata:mitre_technique_id T1190, created_at 2026_11_14, confidence High; sid:9100005; rev:1;)
+
+# ---------------------------------------------------------------------------
+# Post-exploitation: web shell usage and payload delivery
+# ---------------------------------------------------------------------------
+
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"BLUETEAM OS command in HTTP parameter to script page"; flow:established,to_server; http.uri; pcre:"/\.(jspx?|aspx?|ashx|php)\?(.*&)?[a-z0-9_]{1,12}=(whoami|ipconfig|ifconfig|id%20|uname|net(%20|\+)user|cmd(%20|\+)\/c|powershell)/i"; classtype:web-application-attack; metadata:mitre_technique_id T1505.003, created_at 2026_11_14, confidence Medium; sid:9100010; rev:1;)
+
+alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"BLUETEAM Server response contains Windows command output after script request"; flow:established,to_client; http.response_body; content:"Windows IP Configuration"; fast_pattern; classtype:successful-recon-limited; metadata:mitre_technique_id T1505.003, created_at 2026_11_14, confidence Medium; sid:9100011; rev:1;)
+
+alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"BLUETEAM Server response contains Unix id command output"; flow:established,to_client; http.response_body; content:"uid="; pcre:"/uid=\d+\([a-z0-9_-]+\)\s+gid=\d+\(/"; classtype:successful-recon-limited; metadata:mitre_technique_id T1505.003, created_at 2026_11_14, confidence High; sid:9100012; rev:1;)
+
+alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"BLUETEAM PowerShell download cradle user agent from internal host"; flow:established,to_server; http.user_agent; content:"WindowsPowerShell/"; fast_pattern; classtype:policy-violation; metadata:mitre_technique_id T1105, created_at 2026_11_14, confidence Low; sid:9100020; rev:1;)
+
+alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"BLUETEAM certutil URL cache download"; flow:established,to_server; http.user_agent; content:"CertUtil URL Agent"; fast_pattern; classtype:trojan-activity; metadata:mitre_technique_id T1105, created_at 2026_11_14, confidence Medium; sid:9100021; rev:1;)
+
+alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"BLUETEAM HTTP request to raw IP host (flowbit setter)"; flow:established,to_server; http.host; pcre:"/^\d{1,3}(\.\d{1,3}){3}(:\d+)?$/"; flowbits:set,blueteam.rawip_host; flowbits:noalert; classtype:misc-activity; sid:9100023; rev:1;)
+
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"BLUETEAM Windows executable downloaded from raw IP host"; flow:established,to_client; flowbits:isset,blueteam.rawip_host; file.data; content:"MZ"; startswith; classtype:trojan-activity; metadata:mitre_technique_id T1105, created_at 2026_11_14, confidence Medium; sid:9100022; rev:1;)
+
+# ---------------------------------------------------------------------------
+# Impact: cryptomining
+# ---------------------------------------------------------------------------
+
+alert tcp $HOME_NET any -> $EXTERNAL_NET any (msg:"BLUETEAM Stratum mining login (JSON-RPC)"; flow:established,to_server; content:"|22|method|22|"; content:"login"; distance:0; within:12; content:"|22|agent|22|"; classtype:coin-mining; metadata:mitre_technique_id T1496, created_at 2026_11_14, confidence High; sid:9100030; rev:1;)
+
+alert tcp $HOME_NET any -> $EXTERNAL_NET any (msg:"BLUETEAM Stratum mining.subscribe"; flow:established,to_server; content:"mining.subscribe"; fast_pattern; classtype:coin-mining; metadata:mitre_technique_id T1496, created_at 2026_11_14, confidence High; sid:9100031; rev:1;)
+
+alert dns $HOME_NET any -> any any (msg:"BLUETEAM DNS query for common mining pool domain"; dns.query; pcre:"/(^|\.)(pool\.)?(minexmr|supportxmr|nanopool|moneroocean|hashvault|2miners|f2pool|c3pool|herominers)\./i"; classtype:coin-mining; metadata:mitre_technique_id T1496, created_at 2026_11_14, confidence High; sid:9100032; rev:1;)
+
+# ---------------------------------------------------------------------------
+# Command and control / exfiltration indicators (behavioral)
+# ---------------------------------------------------------------------------
+
+alert dns $HOME_NET any -> any any (msg:"BLUETEAM Very long DNS query name (possible tunneling)"; dns.query; bsize:>100; pcre:"/^[a-z0-9]{40,}\./i"; threshold:type both, track by_src, count 20, seconds 60; classtype:policy-violation; metadata:mitre_technique_id T1071.004, created_at 2026_11_14, confidence Medium; sid:9100040; rev:1;)
+
+alert tls $HOME_NET any -> $EXTERNAL_NET any (msg:"BLUETEAM TLS to dynamic DNS domain"; tls.sni; pcre:"/\.(duckdns\.org|no-ip\.(com|org|biz)|ddns\.net|hopto\.org|zapto\.org|serveo\.net|ngrok(-free)?\.(io|app))$/i"; classtype:policy-violation; metadata:mitre_technique_id T1071.001, created_at 2026_11_14, confidence Low; sid:9100041; rev:1;)
+
+alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"BLUETEAM Large HTTP POST to file-sharing or paste service"; flow:established,to_server; http.method; content:"POST"; http.host; pcre:"/(pastebin\.com|transfer\.sh|file\.io|anonfiles|gofile\.io|mega\.nz|temp\.sh)$/i"; http.content_len; byte_test:0,>,5000000,0,string,dec; classtype:policy-violation; metadata:mitre_technique_id T1567, created_at 2026_11_14, confidence Medium; sid:9100042; rev:1;)
+
+# ---------------------------------------------------------------------------
+# Lateral movement
+# ---------------------------------------------------------------------------
+
+alert smb $HOME_NET any -> $HOME_NET 445 (msg:"BLUETEAM PsExec-style service binary written to ADMIN$"; flow:established,to_server; smb.share; content:"ADMIN$"; nocase; classtype:attempted-admin; metadata:mitre_technique_id T1021.002, mitre_technique_id T1569.002, created_at 2026_11_14, confidence Low; sid:9100050; rev:1;)

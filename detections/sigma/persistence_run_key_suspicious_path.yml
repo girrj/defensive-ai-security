@@ -1,0 +1,43 @@
+title: Run Key Persistence Pointing to a User-Writable or Script Location
+id: aa4b6d3f-1ccf-4a1f-b4c8-4e2c59ad7c4e
+status: experimental
+description: |
+  Detects Run and RunOnce registry values that start programs from
+  user-writable directories (AppData, Temp, Public, ProgramData) or through
+  script hosts. Legitimate software installs to Program Files. Commodity
+  malware and many intrusion toolkits persist from these locations instead.
+author: girrj
+date: 2026-11-14
+tags:
+  - attack.persistence
+  - attack.t1547.001
+logsource:
+  category: registry_set
+  product: windows
+detection:
+  selection_key:
+    TargetObject|contains:
+      - '\Software\Microsoft\Windows\CurrentVersion\Run\'
+      - '\Software\Microsoft\Windows\CurrentVersion\RunOnce\'
+      - '\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Run\'
+  selection_path:
+    Details|contains:
+      - '\AppData\Local\Temp\'
+      - '\AppData\Roaming\'
+      - '\Users\Public\'
+      - '\ProgramData\'
+      - '\Windows\Temp\'
+      - 'wscript'
+      - 'cscript'
+      - 'mshta'
+      - 'powershell'
+      - 'rundll32'
+      - 'regsvr32'
+  filter_known_updaters:
+    Details|contains:
+      - '\AppData\Local\Microsoft\OneDrive\'
+      - '\AppData\Local\Microsoft\Teams\'
+  condition: selection_key and selection_path and not filter_known_updaters
+falsepositives:
+  - Per-user installed applications (chat clients, updaters) that run from AppData. Extend the filter with your own fleet baseline.
+level: medium

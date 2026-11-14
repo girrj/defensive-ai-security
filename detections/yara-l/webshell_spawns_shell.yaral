@@ -1,0 +1,36 @@
+rule webshell_spawns_shell_then_discovery {
+
+  meta:
+    author = "girrj"
+    description = "A web server process starts a shell, and within 15 minutes the same host runs two or more discovery commands. This sequence fits hands-on-keyboard use of a web shell."
+    severity = "HIGH"
+    priority = "HIGH"
+    mitre_attack_tactic = "Persistence, Discovery"
+    mitre_attack_technique = "T1505.003, T1033, T1082, T1016"
+    created = "2026-11-14"
+
+  events:
+    $shell.metadata.event_type = "PROCESS_LAUNCH"
+    re.regex($shell.principal.process.file.full_path, `(?i)[\\/](w3wp\.exe|httpd(\.exe)?|apache2|nginx(\.exe)?|php-fpm|php-cgi\.exe|java(w)?(\.exe)?|tomcat\d*\.exe|node(\.exe)?)$`)
+    re.regex($shell.target.process.file.full_path, `(?i)[\\/](cmd\.exe|powershell\.exe|pwsh\.exe|sh|bash|dash)$`)
+    $shell.principal.hostname = $host
+
+    $recon.metadata.event_type = "PROCESS_LAUNCH"
+    re.regex($recon.target.process.file.full_path, `(?i)[\\/](whoami|id|hostname|systeminfo|ipconfig|ifconfig|ip|net|net1|nltest|quser|netstat|ss|uname|tasklist)(\.exe)?$`)
+    $recon.principal.hostname = $host
+
+    $shell.metadata.event_timestamp.seconds <= $recon.metadata.event_timestamp.seconds
+
+  match:
+    $host over 15m
+
+  outcome:
+    $risk_score = max(70 + if(count_distinct($recon.target.process.file.full_path) >= 4, 20, 0))
+    $web_process = array_distinct($shell.principal.process.file.full_path)
+    $shell_cmd = array_distinct($shell.target.process.command_line)
+    $recon_cmds = array_distinct($recon.target.process.command_line)
+    $recon_count = count_distinct($recon.target.process.file.full_path)
+
+  condition:
+    $shell and #recon >= 2
+}

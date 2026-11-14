@@ -1,0 +1,58 @@
+title: Web Server Process Spawns Shell or Recon Utility (Linux)
+id: e145ea37-2f67-466b-8355-623a70fe4f21
+status: experimental
+description: |
+  Detects a web server or application runtime on Linux starting a shell or a
+  utility typically used right after a web shell is planted or an RCE is
+  exploited: identity checks, network discovery, and payload download.
+author: girrj
+date: 2026-11-14
+tags:
+  - attack.persistence
+  - attack.t1505.003
+  - attack.execution
+  - attack.t1059.004
+  - attack.initial-access
+  - attack.t1190
+logsource:
+  category: process_creation
+  product: linux
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '/httpd'
+      - '/apache2'
+      - '/nginx'
+      - '/php-fpm'
+      - '/php'
+      - '/java'
+      - '/node'
+      - '/lighttpd'
+  selection_child:
+    Image|endswith:
+      - '/sh'
+      - '/bash'
+      - '/dash'
+      - '/zsh'
+      - '/whoami'
+      - '/id'
+      - '/uname'
+      - '/ifconfig'
+      - '/ip'
+      - '/netstat'
+      - '/ss'
+      - '/wget'
+      - '/curl'
+      - '/nc'
+      - '/ncat'
+      - '/python'
+      - '/python3'
+      - '/perl'
+  filter_known_wrappers:
+    CommandLine|contains:
+      - '/usr/sbin/sendmail'
+      - 'logrotate'
+  condition: selection_parent and selection_child and not filter_known_wrappers
+falsepositives:
+  - PHP applications that shell out for image processing or mail. Baseline the exact command lines per application.
+level: high

@@ -1,0 +1,37 @@
+title: Service Installed With Random Name or Command Shell Binary Path
+id: 926a93a6-5f61-4b47-adf6-6392c9841f59
+status: experimental
+description: |
+  Detects new Windows services (System event 7045) whose binary path runs a
+  command shell or PowerShell, or sits in ADMIN$ or Temp. Several remote
+  execution tools create services like these, including PsExec clones and
+  the Impacket and Metasploit psexec modules, and so do ransomware operators
+  pushing payloads across a domain.
+author: girrj
+date: 2026-11-14
+tags:
+  - attack.lateral-movement
+  - attack.t1021.002
+  - attack.execution
+  - attack.t1569.002
+logsource:
+  product: windows
+  service: system
+detection:
+  selection_event:
+    Provider_Name: 'Service Control Manager'
+    EventID: 7045
+  selection_path:
+    ImagePath|contains:
+      - 'cmd.exe /c'
+      - 'cmd /c'
+      - '%COMSPEC%'
+      - 'powershell'
+      - '\ADMIN$\'
+      - '\Windows\Temp\'
+      - '\AppData\'
+      - '\Users\Public\'
+  condition: selection_event and selection_path
+falsepositives:
+  - Legitimate remote administration with PsExec by the IT team. Exclude by approved administrator source hosts.
+level: high

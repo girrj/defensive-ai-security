@@ -1,0 +1,42 @@
+title: Scheduled Task Created to Run From Suspicious Location or as SYSTEM via Script Host
+id: af236ea6-54ef-49a5-9697-9cec87f25f6c
+status: experimental
+description: |
+  Detects schtasks.exe creating a task that runs a program from a
+  user-writable directory, runs through a script host or encoded PowerShell,
+  or runs as SYSTEM with a script interpreter. Scheduled tasks are one of the
+  most common ways intrusions persist and move laterally.
+author: girrj
+date: 2026-11-14
+tags:
+  - attack.persistence
+  - attack.execution
+  - attack.t1053.005
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_create:
+    Image|endswith: '\schtasks.exe'
+    CommandLine|contains: '/create'
+  selection_payload:
+    CommandLine|contains:
+      - '\AppData\'
+      - '\Temp\'
+      - '\Users\Public\'
+      - '\ProgramData\'
+      - 'powershell'
+      - 'pwsh'
+      - 'cmd /c'
+      - 'cmd.exe /c'
+      - 'mshta'
+      - 'wscript'
+      - 'cscript'
+      - 'rundll32'
+      - 'regsvr32'
+      - 'http://'
+      - 'https://'
+  condition: selection_create and selection_payload
+falsepositives:
+  - Software deployment tools that register maintenance tasks with PowerShell. Baseline their exact task names and exclude by command line.
+level: medium

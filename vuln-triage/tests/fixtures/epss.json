@@ -1,0 +1,10 @@
+{
+  "status": "OK",
+  "data": [
+    {"cve": "CVE-2021-44228", "epss": "0.944", "percentile": "0.999"},
+    {"cve": "CVE-2024-3400", "epss": "0.943", "percentile": "0.999"},
+    {"cve": "CVE-2099-0001", "epss": "0.150", "percentile": "0.950"},
+    {"cve": "CVE-2099-0002", "epss": "0.020", "percentile": "0.800"},
+    {"cve": "CVE-2099-0003", "epss": "0.001", "percentile": "0.200"}
+  ]
+}

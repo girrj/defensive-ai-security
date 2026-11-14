@@ -1,0 +1,4 @@
+cve,asset,exposure
+CVE-2024-3400,fw-edge-01,internet
+CVE-2021-44228,app-int-07,internal
+CVE-2099-0001,web-02,internet

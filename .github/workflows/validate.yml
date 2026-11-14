@@ -1,0 +1,84 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  rules-and-tools:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install validators
+        run: |
+          pip install pysigma pysigma-backend-splunk yara-python pyyaml scapy
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq suricata apache2 libapache2-mod-security2 shellcheck
+
+      - name: YAML duplicate keys
+        run: python tools/ci/check_yaml_duplicates.py detections/sigma/*.yml
+
+      - name: Sigma rules (validate + convert)
+        run: |
+          python - <<'EOF'
+          import glob, sys
+          from sigma.collection import SigmaCollection
+          from sigma.backends.splunk import SplunkBackend
+          backend, bad = SplunkBackend(), 0
+          for f in sorted(glob.glob("detections/sigma/*.yml")):
+              c = SigmaCollection.from_yaml(open(f).read())
+              errs = [e for r in c.rules for e in r.errors]
+              if not errs:
+                  backend.convert(c)
+              print(("FAIL " if errs else "ok   ") + f, *errs)
+              bad += bool(errs)
+          sys.exit(bad)
+          EOF
+
+      - name: YARA rules
+        run: |
+          python - <<'EOF'
+          import glob, yara
+          for f in sorted(glob.glob("detections/yara/*.yar")):
+              yara.compile(filepath=f)
+              print("ok   " + f)
+          EOF
+
+      - name: Suricata rules (load + pcap replay)
+        run: detections/suricata/tests/run_tests.sh
+
+      - name: ModSecurity rules (live Apache test)
+        run: detections/waf/tests/run_tests.sh
+
+      - name: Python tests
+        run: |
+          python -m unittest discover -s vuln-triage/tests -v
+          python -m unittest discover -s tools/tests -v
+          python -m unittest discover -s ndr/tests -v
+          python -m unittest discover -s llm-guidelines/eval/tests -v
+
+      - name: Shell scripts (shellcheck)
+        run: shellcheck -S error forensics/collect/collect_linux.sh tools/check-public.sh detections/suricata/tests/run_tests.sh detections/waf/tests/run_tests.sh
+
+      - name: PowerShell collection script (parse + PSScriptAnalyzer)
+        shell: pwsh
+        run: |
+          $errs = $null; $tok = $null
+          [System.Management.Automation.Language.Parser]::ParseFile("forensics/collect/collect_windows.ps1", [ref]$tok, [ref]$errs) | Out-Null
+          if ($errs.Count) { $errs | ForEach-Object { Write-Error $_.ToString() }; exit 1 }
+          Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
+          $issues = Invoke-ScriptAnalyzer -Path forensics/collect/collect_windows.ps1 -Severity Error
+          $issues | Format-Table -AutoSize
+          if ($issues) { exit 1 }
+
+      - name: Secret scan (full history)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

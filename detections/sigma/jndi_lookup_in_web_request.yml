@@ -1,0 +1,38 @@
+title: JNDI Lookup String in Web Request (Log4Shell-style)
+id: f68ba4bd-542b-4b44-8431-42da5fa26b67
+status: experimental
+description: |
+  Detects JNDI lookup strings, including common obfuscated forms, in URIs,
+  user agents, or referers in web server or proxy logs. Mass scanning for
+  CVE-2021-44228 and similar JNDI injection flaws has never stopped, and the
+  same payloads keep showing up against newly exposed Java applications.
+author: girrj
+date: 2026-11-14
+references:
+  - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+tags:
+  - attack.initial-access
+  - attack.t1190
+  - cve.2021-44228
+logsource:
+  category: webserver
+detection:
+  selection_plain:
+    - cs-uri-query|contains: '${jndi:'
+    - cs-user-agent|contains: '${jndi:'
+    - cs-referer|contains: '${jndi:'
+  selection_encoded:
+    - cs-uri-query|contains:
+        - '%24%7Bjndi'
+        - '%24%7bjndi'
+        - '${${lower:j}'
+        - '${${::-j}'
+        - '${${env:'
+    - cs-user-agent|contains:
+        - '${${lower:j}'
+        - '${${::-j}'
+        - '${${env:'
+  condition: 1 of selection_*
+falsepositives:
+  - Your own vulnerability scanners. Exclude their source addresses.
+level: high

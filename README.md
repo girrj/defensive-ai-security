@@ -1,0 +1,102 @@
+# Defensive AI Security
+
+A blue-team toolkit for running a SOC or CERT. It covers detection engineering across IDS, WAF, EDR, NDR, and SIEM, plus incident response, forensics, vulnerability and zero-day response, and guidelines for using LLMs safely in that work.
+
+Maintained by a security operations practitioner with more than ten years in enterprise SOCs, CERT work, and managed security services.
+
+---
+
+## What's here
+
+| Area | Contents |
+| --- | --- |
+| [**detections/**](detections/) | **Sigma** (14 rules), **Suricata IDS** (19 rules), **ModSecurity WAF** (9 rules), **YARA** (4 rules), **Google SecOps YARA-L** (2 rules), all tested |
+| [**edr/**](edr/) | EDR operations: measuring coverage, a triage method, response actions and when to use them, tuning without losing coverage |
+| [**ndr/**](ndr/) | `zeek_hunt.py` for beaconing and DNS-tunneling detection over Zeek logs, plus a network hunting guide |
+| [**hunting/**](hunting/) | Hunting queries for Google SecOps (UDM) and Splunk (SPL) |
+| [**ir-manual/**](ir-manual/) | **Incident response manual**: roles, severity, the response process (NIST SP 800-61r3), communication, **Korean legal reporting (Network Act 24h, PIPA 72h)**, readiness |
+| [**playbooks/**](playbooks/) | Zero-day / emergency vulnerability response, web shell compromise, ransomware precursors, AI coding agent incidents |
+| [**forensics/**](forensics/) | Windows, Linux, and memory artifact guides, evidence handling and chain of custody, **read-only live-response collection scripts** (Bash, PowerShell) |
+| [**soc-operations/**](soc-operations/) | Alert triage standard, detection engineering lifecycle, shift handover and incident report templates |
+| [**vuln-triage/**](vuln-triage/) | `cve_triage.py`: CVE prioritization from CISA KEV, EPSS, and exposure |
+| [**llm-guidelines/**](llm-guidelines/) | **Instructions for training and operating an LLM as a SOC assistant**: system prompt, agent operating rules, good and bad examples, fine-tuning data, an automated eval set |
+| [**ai-assisted-defense/**](ai-assisted-defense/) | Usage principles, data-handling rules, and prompt templates for analysts |
+| [**tools/**](tools/) | `ioc_extract.py` (IOC extraction, refanging, and defanging), pre-publication secret scan, CI helpers |
+
+---
+
+## Detection coverage
+
+| Tactic | Technique | Sigma | Suricata | WAF | YARA / YARA-L |
+| --- | --- | :---: | :---: | :---: | :---: |
+| Initial access | T1190 Exploit public-facing app (JNDI, class-loader, traversal) | ✅ | ✅ | ✅ | |
+| Execution | T1059.001 PowerShell (encoded, hidden, cradle) | ✅ | | | |
+| Persistence | T1505.003 Web shell | ✅ | ✅ | ✅ | ✅ ✅ |
+| Persistence | T1547.001 Run keys, T1053.005 scheduled tasks | ✅ | | | |
+| Defense evasion | T1218 LOLBins, T1562.001 Defender tampering | ✅ | ✅ | | ✅ |
+| Credential access | T1003.001 LSASS dump, T1552 credential files | ✅ | | ✅ | |
+| Lateral movement | T1021.002 / T1569.002 PsExec-style services | ✅ | ✅ | | |
+| Command and control | T1071 beaconing / DNS tunneling, T1105 tool transfer | | ✅ | | `zeek_hunt.py` |
+| Exfiltration | T1567 to web services | | ✅ | | |
+| Impact | T1490 recovery inhibition, T1496 mining, T1485 destruction | ✅ | ✅ | | ✅ ✅ |
+| AI agent misuse | Destructive commands, credential access, control tampering by AI coding agents | ✅ | | | ✅ |
+
+## How everything is tested
+
+Every push runs [CI](.github/workflows/validate.yml):
+
+| Check | What it proves |
+| --- | --- |
+| pySigma validation + Splunk conversion, duplicate-key check | Sigma rules parse, convert, and don't silently drop conditions |
+| YARA compile + positive and negative samples | YARA rules compile and separate web shells from normal pages |
+| **Suricata pcap replay** | Each IDS rule fires on synthetic attack traffic, and benign sessions raise no alerts |
+| **Live Apache + ModSecurity** | Each WAF rule blocks or scores the attack request, and benign requests pass |
+| Python unit tests | `cve_triage`, `ioc_extract`, `zeek_hunt`, and the LLM eval harness |
+| shellcheck, PowerShell parser + PSScriptAnalyzer | The collection scripts are well-formed |
+| gitleaks (full history) | No secrets in the repository |
+
+All test data is synthetic. It uses documentation IP ranges (RFC 5737), example domains, and harmless placeholder payloads. Nothing here contains customer data, internal hostnames, real case IOCs, malware, or exploit code.
+
+---
+
+## Quick start
+
+```bash
+# Prioritize CVEs
+python3 vuln-triage/cve_triage.py CVE-2024-3400 CVE-2021-44228 --exposure internet
+
+# Extract and defang IOCs from a report
+python3 tools/ioc_extract.py report.txt --defang --format csv
+
+# Hunt for beaconing and DNS tunneling in Zeek logs
+python3 ndr/zeek_hunt.py beacon conn.log --min-conns 20
+python3 ndr/zeek_hunt.py dns dns.log
+
+# Live-response collection (read-only)
+sudo forensics/collect/collect_linux.sh -o /mnt/usb -c IR-001
+#   Windows (elevated): .\forensics\collect\collect_windows.ps1 -OutputPath E:\IR -CaseId IR-001
+
+# Scan a web root for web shells
+yara -r detections/yara/webshell_generic.yar /var/www/
+
+# Evaluate an LLM against the SOC assistant guidelines
+python3 llm-guidelines/eval/run_eval.py llm-guidelines/eval/cases.jsonl responses.jsonl
+```
+
+The Python tools use only the standard library (Python 3.9+).
+
+---
+
+## Principles
+
+- **Behavior over indicators.** Process relationships, sequences, and protocol behavior outlast hashes and IPs.
+- **Verify against raw logs.** Decisions rest on events an analyst queried directly, and confirmed facts are kept apart from inference.
+- **Exploitation evidence over severity scores.** Vulnerabilities are ordered by known exploitation, probability of exploitation, and exposure.
+- **Preserve before you act.** Evidence is collected and hashed before containment changes the system.
+- **AI assists, people decide.** Model output is checked against primary sources, instructions found in data are never followed, and any change to a system needs explicit human approval.
+
+See [RESPONSIBLE_USE.md](RESPONSIBLE_USE.md) for the scope of this work and how disclosure is handled.
+
+## License
+
+[MIT](LICENSE)

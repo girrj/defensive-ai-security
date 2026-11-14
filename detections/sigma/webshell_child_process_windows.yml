@@ -1,0 +1,66 @@
+title: Web Server Process Spawns Command Shell or Recon Utility (Windows)
+id: 0a471546-a946-4bcf-9b65-4e39ddd7c786
+status: experimental
+description: |
+  Detects an IIS worker, a Java application server, or a PHP or Node runtime
+  starting a command interpreter or a common reconnaissance utility. Web
+  applications rarely need to start shells. When they do, the usual cause is a
+  web shell or remote code execution in the application.
+author: girrj
+date: 2026-11-14
+tags:
+  - attack.persistence
+  - attack.t1505.003
+  - attack.execution
+  - attack.t1059
+  - attack.initial-access
+  - attack.t1190
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\w3wp.exe'
+      - '\httpd.exe'
+      - '\nginx.exe'
+      - '\php-cgi.exe'
+      - '\tomcat.exe'
+      - '\tomcat8.exe'
+      - '\tomcat9.exe'
+      - '\tomcat10.exe'
+      - '\java.exe'
+      - '\javaw.exe'
+      - '\node.exe'
+  selection_child:
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\whoami.exe'
+      - '\net.exe'
+      - '\net1.exe'
+      - '\ipconfig.exe'
+      - '\systeminfo.exe'
+      - '\tasklist.exe'
+      - '\nltest.exe'
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\curl.exe'
+      - '\wmic.exe'
+      - '\quser.exe'
+      - '\netstat.exe'
+  filter_java_tooling:
+    ParentImage|endswith:
+      - '\java.exe'
+      - '\javaw.exe'
+    ParentCommandLine|contains:
+      - 'gradle'
+      - 'maven'
+      - 'jetbrains'
+      - 'eclipse'
+  condition: selection_parent and selection_child and not filter_java_tooling
+falsepositives:
+  - Application health checks or deployment scripts that call cmd.exe. Baseline per server and exclude by full command line, not by parent alone.
+  - Developer workstations running Java build tools. The filter covers the common ones.
+level: high

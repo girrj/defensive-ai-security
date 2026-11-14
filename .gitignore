@@ -1,0 +1,4 @@
+tools/denylist.local.txt
+.env
+*.local.*
+.DS_Store
