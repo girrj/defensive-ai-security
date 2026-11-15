@@ -12,6 +12,7 @@ Maintained by a security operations practitioner with more than ten years in ent
 | --- | --- |
 | [**detections/**](detections/) | **Sigma** (21 rules), **Suricata IDS** (31 rules), **ModSecurity WAF** (19 rules), **YARA** (13 rules), **Google SecOps YARA-L** (2 rules), all tested |
 | [**ai-security/**](ai-security/) | **Defending AI systems**: OWASP LLM Top 10 **2026**, OWASP Agentic Top 10 2026, and MITRE ATLAS mapped to detections; LLM infrastructure hardening; MCP security checklist; a map of open-source defensive AI tools |
+| [**encyclopedia/**](encyclopedia/) | **Blue team, SOC and CERT encyclopedia** (English with Korean terms): categorized list of glossary, concept, framework, tool and technique entries, being filled in |
 | [**threat-intel/korea-incidents/**](threat-intel/korea-incidents/) | **12 public Korean breaches (2025–2026)** rewritten for defenders: timeline, root cause, related CVEs, ATT&CK mapping, the detections here that cover each one, and 61 public IOCs with sources |
 | [**edr/**](edr/) | EDR operations: measuring coverage, a triage method, response actions and when to use them, tuning without losing coverage |
 | [**ndr/**](ndr/) | `zeek_hunt.py` for beaconing and DNS-tunneling detection over Zeek logs, plus a network hunting guide |
