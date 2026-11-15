@@ -45,7 +45,7 @@ Attackers stole civil servants' government PKI (GPKI, 행정전자서명) certif
 
 | Layer | Detection |
 | --- | --- |
-| Hunting | VPN logins from new devices, networks or countries (to be added), same certificate from many IPs (to be added) |
+| Hunting | [VPN new-source and certificate use](../hunting.md#vpn-new-source) |
 | SOC | [Alert triage standard](../../../soc-operations/alert-triage-standard.md) for identity alerts |
 
 ## Lessons for SOC and CERT

@@ -44,7 +44,7 @@ This case has no victim-specific public IOCs. The Gunra IOCs from AA26-222A (4 S
 | Layer | Detection |
 | --- | --- |
 | EDR (Windows) | Sigma [`gunra_ransomware_artifacts`](../../../detections/sigma/gunra_ransomware_artifacts.yml), [`ransomware_recovery_inhibition`](../../../detections/sigma/ransomware_recovery_inhibition.yml) |
-| Hunting | Brute force against VPN and appliance SSH (to be added), Gunra IOC sweep (to be added) |
+| Hunting | [VPN/appliance brute force](../hunting.md#vpn-brute-force), [Gunra IOC sweep](../hunting.md#ioc-sweep) |
 | Playbook | [Ransomware precursor response](../../../playbooks/ransomware-precursor.md) |
 | Vulnerabilities | [CVE-2024-55591, CVE-2025-24472](../vulnerabilities.md) |
 

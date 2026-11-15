@@ -1,6 +1,6 @@
 # Korean incident cases (국내 침해사고 사례)
 
-Public Korean breaches from 2025–2026 rewritten from a defender's point of view. Each case covers what happened, the root cause, the related vulnerabilities, an ATT&CK mapping, public IOCs if there are any, the detections in this repository that cover it, and lessons for SOC and CERT teams.
+Public Korean incidents from 2025–2026 rewritten from a defender's point of view. Each case records what is publicly known about cause, related vulnerabilities, ATT&CK mapping, public IOCs, relevant defenses and lessons for SOC and CERT teams. Case 13 is an aggregate report with causes still under investigation.
 
 Everything here comes from public reporting and official advisories, and every case lists its sources. Nothing comes from non-public investigations.
 
@@ -20,6 +20,7 @@ Everything here comes from public reporting and official advisories, and every c
 | 10 | [Upbit hot wallet](cases/10-upbit-hot-wallet.md) | 2025 | Virtual assets | Private-key inference flaw | — | — | Hunting |
 | 11 | [Korean Air via KC&D (Oracle EBS)](cases/11-korean-air-kcd-oracle-ebs.md) | 2025 | Aviation supply chain | Oracle EBS zero-day | CVE-2025-61882, CVE-2025-61884 | ✅ campaign | Suricata, WAF, Sigma |
 | 12 | [TVING developer access key](cases/12-tving-access-key.md) | 2026 | Media / OTT | Stolen developer key; plaintext secrets in source | — | — | Hunting, secret scanning |
+| 13 | [Financial-sector incident reports](cases/13-financial-sector-incidents-2026.md) | 2026 | Finance | Under investigation; no common path established | — | — | Exposure review, response |
 
 New cases use the next number and follow [`TEMPLATE.md`](TEMPLATE.md).
 
@@ -29,6 +30,8 @@ New cases use the next number and follow [`TEMPLATE.md`](TEMPLATE.md).
 | --- | --- |
 | [`vulnerabilities.md`](vulnerabilities.md) | Every CVE named in the cases, the affected products and what to do |
 | [`iocs/iocs.csv`](iocs/iocs.csv) | 61 public IOCs, defanged, each with its source and scope ([format](iocs/README.md)) |
+| [`hunting.md`](hunting.md) | SPL and Google SecOps UDM starting points for the 12 case-linked hunts |
+| [`attack-patterns.md`](attack-patterns.md) | Repeated weaknesses and the controls that interrupt them |
 
 ## What the cases have in common
 

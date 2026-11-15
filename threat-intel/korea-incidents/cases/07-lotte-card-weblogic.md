@@ -42,7 +42,7 @@ An eight-year-old Oracle WebLogic vulnerability on one forgotten payment server 
 | IDS | Suricata [9100060](../../../detections/suricata/blue-team.rules) (WLS-WSAT XMLDecoder payload, pcap-tested) |
 | WAF | [1009130](../../../detections/waf/modsecurity/blue-team-waf.conf) (deny `/wls-wsat/` and `/_async/`), 1009131 (XMLDecoder process payload in any body), both live-tested |
 | EDR (Linux) | Sigma [`webshell_child_process_linux`](../../../detections/sigma/webshell_child_process_linux.yml) (Java parent spawning a shell), [`linux_reverse_shell_dev_tcp`](../../../detections/sigma/linux_reverse_shell_dev_tcp.yml) |
-| Hunting | WebLogic exploitation (to be added) |
+| Hunting | [WebLogic host review](../hunting.md#weblogic) |
 | Vulnerability triage | [`cve_triage.py`](../../../vuln-triage/) shows KEV status and EPSS for CVE-2017-10271 |
 | Playbook | [Web shell compromise](../../../playbooks/web-shell-compromise.md) |
 

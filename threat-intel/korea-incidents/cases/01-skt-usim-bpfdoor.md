@@ -70,7 +70,7 @@ Hashes change with each build. The **behavioural** indicators below last longer.
 | NDR / IDS | Suricata [9100070–72](../../../detections/suricata/blue-team.rules) (BPFDoor magic packets, tested by pcap replay) |
 | EDR (Linux) | Sigma [`bpfdoor_pid_file_artifacts`](../../../detections/sigma/bpfdoor_pid_file_artifacts.yml), [`bpfdoor_iptables_redirect`](../../../detections/sigma/bpfdoor_iptables_redirect.yml), [`webshell_child_process_linux`](../../../detections/sigma/webshell_child_process_linux.yml) |
 | File scan | YARA [`Linux_Backdoor_BPFDoor_Generic`](../../../detections/yara/linux_bpfdoor_generic.yar) |
-| Hunting | BPFDoor hunting queries (to be added) |
+| Hunting | [BPFDoor artifact hunt](../hunting.md#bpfdoor) |
 | Forensics | [Linux artifacts](../../../forensics/linux-artifacts.md), [live response script](../../../forensics/collect/collect_linux.sh) |
 
 ## Lessons for SOC and CERT
