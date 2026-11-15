@@ -175,5 +175,40 @@ class EveryRuleTested(unittest.TestCase):
         self.assertEqual(RULES_NAMES - covered, set())
 
 
+# --- BPFDoor samples (inert byte strings with an ELF magic, never executed) ---
+
+ELF = b"\x7fELF\x02\x01\x01" + b"\x00" * 57
+
+
+class BPFDoorRule(unittest.TestCase):
+    RULE = "Linux_Backdoor_BPFDoor_Generic"
+
+    def test_staging_path(self):
+        self.assertIn(self.RULE, hits(ELF + b"\x00/dev/shm/kdmtmpflush\x00"))
+
+    def test_pid_and_masquerade(self):
+        data = ELF + b"\x00/var/run/hald-smartd.pid\x00dbus-daemon --system\x00"
+        self.assertIn(self.RULE, hits(data))
+
+    def test_pty_and_two_masquerades(self):
+        data = ELF + b"\x00/dev/ptm\x00ptem\x00ldterm\x00/sbin/udevd -d\x00avahi-daemon: chroot helper\x00"
+        self.assertIn(self.RULE, hits(data))
+
+    def test_iptables_redirect_with_env(self):
+        data = (ELF + b"\x00/sbin/iptables -t nat -I PREROUTING -p tcp -s %s --dport %d -j REDIRECT --to-ports %d\x00"
+                b"HISTFILE=/dev/null\x00qmgr -l -t unix -u\x00")
+        self.assertIn(self.RULE, hits(data))
+
+    def test_benign_elf_with_one_daemon_name(self):
+        # A real dbus or PTY-using binary contains some of these strings on its own.
+        data = ELF + b"\x00dbus-daemon --system\x00/dev/ptm\x00ptem\x00ldterm\x00"
+        self.assertNotIn(self.RULE, hits(data))
+
+    def test_text_file_is_not_elf(self):
+        # Threat-intel notes and this repo's own docs mention every string.
+        data = b"# notes\n/dev/shm/kdmtmpflush /var/run/haldrund.pid dbus-daemon --system\n"
+        self.assertNotIn(self.RULE, hits(data))
+
+
 if __name__ == "__main__":
     unittest.main()

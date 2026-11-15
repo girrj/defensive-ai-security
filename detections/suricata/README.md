@@ -1,6 +1,6 @@
 # Suricata (IDS/IPS) rules
 
-`blue-team.rules`: 25 rules (24 alerting rules and 1 flowbit setter) in SID range 9100001–9100999.
+`blue-team.rules`: 31 rules (30 alerting rules and 1 flowbit setter) in SID range 9100001–9100999.
 
 | SID | Detects | ATT&CK | Confidence |
 | --- | --- | --- | --- |
@@ -16,6 +16,12 @@
 | 9100041 | TLS to dynamic DNS and tunneling services | T1071.001 | Low |
 | 9100042 | Large POST to a paste or file-sharing service | T1567 | Medium |
 | 9100050 | Write to the ADMIN$ share (PsExec-style lateral movement) | T1021.002 | Low |
+| 9100060 | WebLogic `wls-wsat` XMLDecoder payload (CVE-2017-10271) | T1190 | High |
+| 9100061 | POST to Oracle EBS `/OA_HTML/configurator/UiServlet` | T1190 | Medium |
+| 9100062 | POST to Oracle EBS `/OA_HTML/SyncServlet` (CVE-2025-61882 chain) | T1190 | Medium |
+| 9100070 | BPFDoor TCP magic packet (`0x5293`) | T1205.002 | Medium |
+| 9100071 | BPFDoor UDP magic packet (`0x7255`) | T1205.002 | Medium |
+| 9100072 | BPFDoor ICMP echo magic packet (`0x7255`) | T1205.002 | Medium |
 | 9100100 | External access to the Ollama API (port 11434) | AML.T0040 | High |
 | 9100101 | External model pull, create, delete, copy, or push (model tampering) | AML.T0010 | High |
 | 9100102 | External model enumeration (`/v1/models`, `/api/tags`) | AML.T0040, T1595 | Medium |
@@ -34,10 +40,11 @@ pip install scapy
 detections/suricata/tests/run_tests.sh
 ```
 
-Covered by replay tests: 9100001–05, 10–12, 20–22, 30–32, 41, 100–105. The rest are syntax-validated only. Their thresholds (9100040) and size conditions (9100042) are better tuned against your own traffic.
+Covered by replay tests: 9100001–05, 10–12, 20–22, 30–32, 41, 60–62, 70–72, 100–105. The rest are syntax-validated only. Their thresholds (9100040) and size conditions (9100042) are better tuned against your own traffic.
 
 ## Deployment notes
 
 - Set `HOME_NET` correctly. Several rules depend on direction.
 - 9100011, 9100012, and 9100022 inspect response bodies. Check that `http.response-body.limit` in `suricata.yaml` is large enough.
+- 9100060–62 and 9100070–72 come from the Korean incident cases in [`threat-intel/korea-incidents/`](../../threat-intel/korea-incidents/). The BPFDoor rules use packet-level (`tcp-pkt`) matching because BPFDoor reads raw packets with a BPF filter and never needs an established session.
 - In IPS mode, change `alert` to `drop` only for High-confidence rules, and only after a week of review.

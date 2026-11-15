@@ -1,0 +1,32 @@
+title: Gunra Ransomware Note or Encrypted File Extension
+id: 3f8b6a19-5d2e-4c70-91a4-7e0c2b5d8f36
+status: experimental
+description: |
+  Detects the ransom note names and encrypted-file extensions reported for the
+  Conti-derived Gunra ransomware family, including the variant behind a 2025
+  Korean financial-sector outage. File creation of the note in many folders
+  within minutes is the strongest signal; one hit is enough to start the
+  ransomware playbook.
+references:
+  - https://www.ic3.gov/CSA/2026/260810.pdf
+author: girrj
+date: 2026-11-14
+tags:
+  - attack.impact
+  - attack.t1486
+logsource:
+  category: file_event
+  product: windows
+detection:
+  selection_note:
+    TargetFilename|endswith:
+      - '\R3ADM3.txt'
+      - '\R34DM3.txt'
+  selection_ext:
+    TargetFilename|endswith:
+      - '.ENCRT'
+      - '.CRYPT'
+  condition: selection_note or selection_ext
+falsepositives:
+  - '.CRYPT is also used by some legitimate encryption tools. If noisy, keep only the note names and .ENCRT.'
+level: high

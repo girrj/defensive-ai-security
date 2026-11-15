@@ -10,8 +10,9 @@ Maintained by a security operations practitioner with more than ten years in ent
 
 | Area | Contents |
 | --- | --- |
-| [**detections/**](detections/) | **Sigma** (17 rules), **Suricata IDS** (25 rules), **ModSecurity WAF** (14 rules), **YARA** (12 rules), **Google SecOps YARA-L** (2 rules), all tested |
+| [**detections/**](detections/) | **Sigma** (21 rules), **Suricata IDS** (31 rules), **ModSecurity WAF** (19 rules), **YARA** (13 rules), **Google SecOps YARA-L** (2 rules), all tested |
 | [**ai-security/**](ai-security/) | **Defending AI systems**: OWASP LLM Top 10 **2026**, OWASP Agentic Top 10 2026, and MITRE ATLAS mapped to detections; LLM infrastructure hardening; MCP security checklist; a map of open-source defensive AI tools |
+| [**threat-intel/korea-incidents/**](threat-intel/korea-incidents/) | **12 public Korean breaches (2025–2026)** rewritten for defenders: timeline, root cause, related CVEs, ATT&CK mapping, the detections here that cover each one, and 61 public IOCs with sources |
 | [**edr/**](edr/) | EDR operations: measuring coverage, a triage method, response actions and when to use them, tuning without losing coverage |
 | [**ndr/**](ndr/) | `zeek_hunt.py` for beaconing and DNS-tunneling detection over Zeek logs, plus a network hunting guide |
 | [**hunting/**](hunting/) | Hunting queries for Google SecOps (UDM) and Splunk (SPL) |
@@ -30,7 +31,7 @@ Maintained by a security operations practitioner with more than ten years in ent
 
 | Tactic | Technique | Sigma | Suricata | WAF | YARA / YARA-L |
 | --- | --- | :---: | :---: | :---: | :---: |
-| Initial access | T1190 Exploit public-facing app (JNDI, class-loader, traversal) | ✅ | ✅ | ✅ | |
+| Initial access | T1190 Exploit public-facing app (JNDI, class-loader, traversal, WebLogic XMLDecoder, Oracle EBS) | ✅ | ✅ | ✅ | |
 | Execution | T1059.001 PowerShell (encoded, hidden, cradle) | ✅ | | | |
 | Persistence | T1505.003 Web shell | ✅ | ✅ | ✅ | ✅ ✅ |
 | Persistence | T1547.001 Run keys, T1053.005 scheduled tasks | ✅ | | | |
@@ -38,8 +39,9 @@ Maintained by a security operations practitioner with more than ten years in ent
 | Credential access | T1003.001 LSASS dump, T1552 credential files | ✅ | | ✅ | |
 | Lateral movement | T1021.002 / T1569.002 PsExec-style services | ✅ | ✅ | | |
 | Command and control | T1071 beaconing / DNS tunneling, T1105 tool transfer | | ✅ | | `zeek_hunt.py` |
+| Command and control | T1205.002 passive backdoor (BPFDoor magic packets, pid files, NAT redirect), T1059.004 reverse shell | ✅ | ✅ | | ✅ |
 | Exfiltration | T1567 to web services | | ✅ | | |
-| Impact | T1490 recovery inhibition, T1496 mining, T1485 destruction | ✅ | ✅ | | ✅ ✅ |
+| Impact | T1490 recovery inhibition, T1486 ransomware notes and extensions, T1496 mining, T1485 destruction | ✅ | ✅ | | ✅ ✅ |
 | AI agent misuse | Destructive commands, credential access, control tampering by AI coding agents | ✅ | | | ✅ |
 | AI: prompt injection | Instruction overrides, hidden HTML/CSS instructions, Unicode tag smuggling (AML.T0051, AML.T0068) | | | ✅ | ✅ |
 | AI: exposed model servers | External access to Ollama/OpenAI-compatible APIs, model tampering, unauthenticated inference (AML.T0040, AML.T0010) | ✅ | ✅ | ✅ | |
@@ -55,11 +57,11 @@ Every push runs [CI](.github/workflows/validate.yml):
 | YARA tests on generated samples | Every YARA rule has a positive test and benign negatives: web shells, miners, prompt injection (including UTF-16 and invisible Unicode), and malicious pickles for every protocol version (built, never loaded) |
 | **Suricata pcap replay** | Each scenario raises exactly its expected SIDs, no more and no fewer, and benign sessions (including an authenticated LLM call) raise none |
 | **Live Apache + ModSecurity** | Each WAF rule blocks or scores the attack request, and benign requests pass |
-| Python unit tests | `cve_triage`, `ioc_extract`, `zeek_hunt`, and the LLM eval harness |
+| Python unit tests | `cve_triage`, `ioc_extract`, `zeek_hunt`, the LLM eval harness, and the format of the public IOC file |
 | shellcheck, PowerShell parser + PSScriptAnalyzer | The collection scripts are well-formed |
 | gitleaks (full history) | No secrets in the repository |
 
-All test data is synthetic. It uses documentation IP ranges (RFC 5737), example domains, and harmless placeholder payloads. Nothing here contains customer data, internal hostnames, real case IOCs, malware, or exploit code.
+All test data is synthetic. It uses documentation IP ranges (RFC 5737), example domains, and harmless placeholder payloads. Nothing here contains customer data, internal hostnames, malware, or exploit code. The only real-world indicators are the public, defanged IOCs in [`threat-intel/korea-incidents/iocs/`](threat-intel/korea-incidents/iocs/), each tied to the official advisory that published it.
 
 ---
 

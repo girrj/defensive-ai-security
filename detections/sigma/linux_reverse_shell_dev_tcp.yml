@@ -1,0 +1,32 @@
+title: Linux Reverse Shell Through /dev/tcp or /dev/udp
+id: 9e4d7b23-1c6f-4a85-b0d2-3f8a6e1c9b54
+status: experimental
+description: |
+  Detects a shell command line that opens a network socket through bash's
+  /dev/tcp or /dev/udp pseudo-devices, the most common one-line reverse shell.
+  Seen in post-exploitation of Oracle EBS (2025 Cl0p campaign), WebLogic, and
+  many other web RCEs. Pair with the web shell child-process rule to catch the
+  parent web or Java process.
+author: girrj
+date: 2026-11-14
+tags:
+  - attack.execution
+  - attack.t1059.004
+  - attack.command-and-control
+  - attack.t1095
+logsource:
+  category: process_creation
+  product: linux
+detection:
+  selection:
+    CommandLine|contains:
+      - '/dev/tcp/'
+      - '/dev/udp/'
+  filter_healthcheck:
+    CommandLine|contains:
+      - '/dev/tcp/127.0.0.1/'
+      - '/dev/tcp/localhost/'
+  condition: selection and not filter_healthcheck
+falsepositives:
+  - Shell-based health checks that probe a remote port with /dev/tcp. Add their exact command lines as filters.
+level: high

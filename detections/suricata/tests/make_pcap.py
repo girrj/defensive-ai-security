@@ -12,7 +12,7 @@ Prints the SIDs each session is expected to trigger as JSON on stdout.
 import json
 import sys
 
-from scapy.all import DNS, DNSQR, IP, TCP, UDP, Raw, wrpcap
+from scapy.all import DNS, DNSQR, ICMP, IP, TCP, UDP, Raw, wrpcap
 
 CLIENT_EXT = "198.51.100.10"   # TEST-NET-2, "internet"
 SERVER_INT = "10.10.10.20"     # HOME_NET web server
@@ -30,7 +30,9 @@ class Expected(dict):
     since the previous assignment, so alerts can be checked per scenario."""
 
     def __setitem__(self, name, sids):
-        super().__setitem__(name, {"sids": sids, "ports": list(_pending_ports)})
+        spec = dict(sids) if isinstance(sids, dict) else {"sids": sids}
+        spec["ports"] = list(_pending_ports)
+        super().__setitem__(name, spec)
         _pending_ports.clear()
 
 
@@ -181,6 +183,38 @@ for i in range(6):
                 http_resp(b'{"data":[]}', "application/json"))
 expected["llm_endpoint_scan"] = [9100102, 9100105]
 
+# --- Patterns from Korean incidents ------------------------------------------
+# 9100060: WebLogic wls-wsat XMLDecoder body (CVE-2017-10271). Inert: the "command" is echo.
+wls_body = (b'<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Header>'
+            b'<work:WorkContext xmlns:work="http://bea.com/2004/06/soap/workarea/"><java><object class="java.lang.ProcessBuilder">'
+            b'<array class="java.lang.String" length="1"><void index="0"><string>echo</string></void></array>'
+            b'<void method="start"/></object></java></work:WorkContext></soapenv:Header><soapenv:Body/></soapenv:Envelope>')
+tcp_session(CLIENT_EXT, SERVER_INT, 7001, http_req("POST", "/wls-wsat/CoordinatorPortType", "was.example",
+            {"Content-Type": "text/xml"}, wls_body), http_resp(b"", "text/xml"))
+expected["weblogic_cve_2017_10271"] = [9100060]
+
+# 9100061 / 9100062: Oracle EBS exploit endpoints (CVE-2025-61882)
+tcp_session(CLIENT_EXT, SERVER_INT, 8000, http_req("POST", "/OA_HTML/SyncServlet", "ebs.example",
+            {"Content-Type": "application/x-www-form-urlencoded"}, b"redirect=x"), OK)
+expected["oracle_ebs_syncservlet"] = [9100062]
+tcp_session(CLIENT_EXT, SERVER_INT, 8000, http_req("POST", "/OA_HTML/configurator/UiServlet", "ebs.example",
+            {"Content-Type": "application/x-www-form-urlencoded"}, b"redirectFromJsp=1"), OK)
+expected["oracle_ebs_uiservlet"] = [9100061]
+
+# 9100070-72: BPFDoor magic packets. Single packets (no handshake), 24-byte
+# magic_packet layout: flag(4) | ip(4) | port(2) | pass(14). Values are placeholders.
+def magic(flag2: bytes) -> bytes:
+    return flag2 + b"\x00\x00" + bytes([203, 0, 113, 9]) + (8000).to_bytes(2, "big") + b"placeholderpw\x00"
+
+_pending_ports.append(41001)
+packets.append(IP(src="203.0.113.9", dst=HOST_INT) / TCP(sport=41001, dport=22, flags="PA", seq=1, ack=1) / Raw(magic(b"\x52\x93")))
+expected["bpfdoor_tcp_magic"] = [9100070]
+_pending_ports.append(41002)
+packets.append(IP(src="203.0.113.9", dst=HOST_INT) / UDP(sport=41002, dport=53) / Raw(magic(b"\x72\x55")))
+expected["bpfdoor_udp_magic"] = [9100071]
+packets.append(IP(src="203.0.113.10", dst=HOST_INT) / ICMP(type=8, id=4242, seq=1) / Raw(magic(b"\x72\x55")))
+expected["bpfdoor_icmp_magic"] = {"sids": [9100072], "src_ip": "203.0.113.10"}
+
 # Benign controls: must trigger nothing from this rule set
 tcp_session(CLIENT_EXT, SERVER_INT, 80, http_req("GET", "/index.html?page=2", "app.example",
             {"User-Agent": "Mozilla/5.0"}), http_resp(b"<html>hello</html>"))
@@ -189,7 +223,8 @@ tcp_session(HOST_INT, SERVER_EXT, 443, client_hello("www.example.com"))
 tcp_session(CLIENT_EXT, LLM_SRV, 8000, http_req("POST", "/v1/chat/completions", "llm.example",
             {"Content-Type": "application/json", "Authorization": "Bearer test-token-placeholder"},
             b'{"model":"m","messages":[]}'), http_resp(b'{"choices":[]}', "application/json"))
-expected["benign_controls"] = []
+packets.append(IP(src="203.0.113.11", dst=HOST_INT) / ICMP(type=8, id=7, seq=1) / Raw(b"abcdefghijklmnopqrstuvwabcdefghi"))
+expected["benign_controls"] = {"sids": [], "src_ip": "203.0.113.11"}
 
 if __name__ == "__main__":
     wrpcap(sys.argv[1], packets)

@@ -82,3 +82,25 @@ alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"BLUETEAM Unauthenticated ext
 alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"BLUETEAM LLM server returned model inventory to external client"; flow:established,to_client; http.response_body; content:"|22|models|22|"; content:"|22|modified_at|22|"; distance:0; classtype:successful-recon-limited; metadata:atlas_technique_id AML.T0040, created_at 2026_11_14, confidence High; sid:9100104; rev:1;)
 
 alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"BLUETEAM Scanning for LLM endpoints across hosts"; flow:established,to_server; http.uri; pcre:"/^\/(v1\/models|api\/tags|api\/version)\/?$/"; threshold:type threshold, track by_src, count 5, seconds 60; classtype:attempted-recon; metadata:mitre_technique_id T1595.002, created_at 2026_11_14, confidence Medium; sid:9100105; rev:1;)
+
+# ---------------------------------------------------------------------------
+# Rules derived from Korean incidents (see threat-intel/korea-incidents/)
+# ---------------------------------------------------------------------------
+
+# Oracle WebLogic wls-wsat XMLDecoder RCE (CVE-2017-10271), used in the 2025 card-company breach
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"BLUETEAM Oracle WebLogic wls-wsat XMLDecoder payload (CVE-2017-10271)"; flow:established,to_server; http.method; content:"POST"; http.uri; content:"/wls-wsat/"; nocase; fast_pattern; http.request_body; content:"java."; nocase; pcre:"/(java\.lang\.ProcessBuilder|java\.lang\.Runtime|<void\s+method=\"start\")/i"; classtype:attempted-admin; reference:cve,2017-10271; metadata:mitre_technique_id T1190, created_at 2026_11_14, confidence High; sid:9100060; rev:1;)
+
+# Oracle E-Business Suite exploit chain endpoints (CVE-2025-61882), used in the 2025 airline-supplier breach
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"BLUETEAM External POST to Oracle EBS UiServlet (CVE-2025-61882 exploit endpoint)"; flow:established,to_server; http.method; content:"POST"; http.uri; content:"/OA_HTML/configurator/UiServlet"; nocase; fast_pattern; classtype:attempted-admin; reference:cve,2025-61882; metadata:mitre_technique_id T1190, created_at 2026_11_14, confidence Medium; sid:9100061; rev:1;)
+
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"BLUETEAM External POST to Oracle EBS SyncServlet (CVE-2025-61882 auth-bypass step)"; flow:established,to_server; http.method; content:"POST"; http.uri; content:"/OA_HTML/SyncServlet"; nocase; fast_pattern; classtype:attempted-admin; reference:cve,2025-61882; metadata:mitre_technique_id T1190, created_at 2026_11_14, confidence Medium; sid:9100062; rev:1;)
+
+# BPFDoor activation ("magic") packets, used in the 2025 telecom breaches.
+# The BPF filter in public BPFDoor code triggers on payloads beginning with
+# 0x5293 (TCP) or 0x7255 (UDP / ICMP). The packet works even to closed ports,
+# so these use tcp-pkt and match single packets without needing a session.
+alert tcp-pkt any any -> $HOME_NET any (msg:"BLUETEAM BPFDoor TCP magic packet (0x5293)"; content:"|52 93|"; depth:2; dsize:20<>200; classtype:trojan-activity; metadata:malware_family BPFDoor, mitre_technique_id T1205.002, created_at 2026_11_14, confidence Medium; sid:9100070; rev:1;)
+
+alert udp any any -> $HOME_NET any (msg:"BLUETEAM BPFDoor UDP magic packet (0x7255)"; content:"|72 55|"; depth:2; dsize:20<>200; classtype:trojan-activity; metadata:malware_family BPFDoor, mitre_technique_id T1205.002, created_at 2026_11_14, confidence Medium; sid:9100071; rev:1;)
+
+alert icmp any any -> $HOME_NET any (msg:"BLUETEAM BPFDoor ICMP magic packet (0x7255)"; itype:8; content:"|72 55|"; depth:2; dsize:20<>200; classtype:trojan-activity; metadata:malware_family BPFDoor, mitre_technique_id T1205.002, created_at 2026_11_14, confidence Medium; sid:9100072; rev:1;)

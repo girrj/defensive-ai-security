@@ -46,15 +46,19 @@ import json, sys
 from collections import defaultdict
 expected = json.load(open(sys.argv[1]))
 by_port = defaultdict(set)
+by_ip = defaultdict(set)
 for line in open(sys.argv[2]):
     ev = json.loads(line)
     if ev.get("event_type") != "alert":
         continue
     for port in (ev.get("src_port"), ev.get("dest_port")):
         by_port[port].add(ev["alert"]["signature_id"])
+    by_ip[ev.get("src_ip")].add(ev["alert"]["signature_id"])
 fail = 0
 for name, spec in expected.items():
     fired = set().union(*(by_port.get(p, set()) for p in spec["ports"])) if spec["ports"] else set()
+    if spec.get("src_ip"):
+        fired |= by_ip.get(spec["src_ip"], set())
     want = set(spec["sids"])
     ok = fired == want
     fail += not ok

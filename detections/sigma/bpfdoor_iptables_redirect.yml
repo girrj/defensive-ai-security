@@ -1,0 +1,32 @@
+title: iptables NAT Redirect to BPFDoor Shell Port Range
+id: 5a1e2c84-7f0d-4b39-8c6e-2d9b7a3f4e15
+status: experimental
+description: |
+  BPFDoor, after receiving a magic packet, inserts a NAT PREROUTING rule that
+  redirects traffic from the operator's IP to a port in 42391-43390, where it
+  serves a bind shell, then removes the rule. Legitimate redirects into that
+  exact range are rare.
+references:
+  - https://www.trendmicro.com/en_us/research/25/d/bpfdoor-hidden-controller.html
+author: girrj
+date: 2026-11-14
+tags:
+  - attack.defense-evasion
+  - attack.t1562.004
+  - attack.command-and-control
+  - attack.t1205.002
+logsource:
+  category: process_creation
+  product: linux
+detection:
+  selection_cmd:
+    CommandLine|contains|all:
+      - 'iptables'
+      - 'REDIRECT'
+      - '--to-ports'
+  selection_range:
+    CommandLine|re: '--to-ports\s+(?:4239[1-9]|42[4-9][0-9]{2}|43[0-2][0-9]{2}|433[0-8][0-9]|43390)\b'
+  condition: all of selection_*
+falsepositives:
+  - Container or service-mesh tooling that happens to use a port in this range. Rare; baseline the parent process.
+level: high
