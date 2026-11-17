@@ -1,4 +1,4 @@
-# One term per line, matched case-insensitively as a fixed string.
+# One term per line, matched case-insensitively as a fixed string at word boundaries.
 # Copy this file to denylist.local.txt (git-ignored) and replace the examples.
 example-corp
 example-customer

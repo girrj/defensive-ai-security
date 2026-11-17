@@ -31,6 +31,6 @@ for r in csv.DictReader(open("threat-intel/korea-incidents/iocs/iocs.csv")):
 | Case | Indicators | Scope |
 | --- | --- | --- |
 | 01 SK Telecom (BPFDoor) | 12 files × MD5 and SHA256 = 24 | incident |
-| 06 Gunra (AA26-222A) | 4 SHA256, 18 IPv4, 1 domain, 3 onion, 4 email, 2 ransom-note names = 32 | campaign |
+| 06 Gunra (AA26-222A) | 4 SHA256, 17 IPv4, 1 domain, 3 onion, 4 email, 2 ransom-note names = 31 | campaign |
 | 11 Oracle EBS (Oracle alert) | 2 IPv4, 1 command, 3 SHA256 = 6 | campaign |
 | **Total** | **61** | |

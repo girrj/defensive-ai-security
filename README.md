@@ -10,7 +10,7 @@ Maintained by a security operations practitioner with more than ten years in ent
 
 | Area | Contents |
 | --- | --- |
-| [**detections/**](detections/) | **Sigma** (21 rules), **Suricata IDS** (31 rules), **ModSecurity WAF** (19 rules), **YARA** (13 rules), **Google SecOps YARA-L** (2 rules), all tested |
+| [**detections/**](detections/) | **Sigma** (21 rules), **Suricata IDS** (31 rules), **ModSecurity WAF** (19 rules), **YARA** (13 rules in 5 files), **Google SecOps YARA-L** (2 reference rules); validation scope below |
 | [**ai-security/**](ai-security/) | **Defending AI systems**: OWASP LLM Top 10 **2026**, OWASP Agentic Top 10 2026, and MITRE ATLAS mapped to detections; LLM infrastructure hardening; MCP security checklist; a map of open-source defensive AI tools |
 | [**encyclopedia/**](encyclopedia/) | **Blue team, SOC and CERT encyclopedia** (English with Korean terms): categorized list of glossary, concept, framework, tool and technique entries, being filled in |
 | [**threat-intel/korea-incidents/**](threat-intel/korea-incidents/) | **12 public Korean breaches (2025–2026)** rewritten for defenders: timeline, root cause, related CVEs, ATT&CK mapping, the detections here that cover each one, and 61 public IOCs with sources |
@@ -54,15 +54,19 @@ Every push runs [CI](.github/workflows/validate.yml):
 
 | Check | What it proves |
 | --- | --- |
-| pySigma validation + Splunk conversion, duplicate-key check | Sigma rules parse, convert, and don't silently drop conditions |
+| pySigma validation + Splunk conversion, duplicate-key check | Sigma YAML parses without duplicate keys and converts to Splunk queries; event matching and production field mappings are not tested |
 | YARA tests on generated samples | Every YARA rule has a positive test and benign negatives: web shells, miners, prompt injection (including UTF-16 and invisible Unicode), and malicious pickles for every protocol version (built, never loaded) |
 | **Suricata pcap replay** | Each scenario raises exactly its expected SIDs, no more and no fewer, and benign sessions (including an authenticated LLM call) raise none |
-| **Live Apache + ModSecurity** | Each WAF rule blocks or scores the attack request, and benign requests pass |
-| Python unit tests | `cve_triage`, `ioc_extract`, `zeek_hunt`, the LLM eval harness, and the format of the public IOC file |
-| shellcheck, PowerShell parser + PSScriptAnalyzer | The collection scripts are well-formed |
-| gitleaks (full history) | No secrets in the repository |
+| **Live Apache + ModSecurity** | Synthetic requests exercise blocking and scoring rules on a local Apache instance; expected HTTP statuses and rule log entries are checked, and benign requests raise no BLUETEAM alerts |
+| Python unit tests | `cve_triage`, `ioc_extract`, `zeek_hunt`, the LLM eval harness, the public-check gate, and the format of the public IOC file; CI does not call an LLM or measure model quality |
+| shellcheck, PowerShell parser + PSScriptAnalyzer | Listed shell scripts and the PowerShell collector pass the configured error-level checks; collection behavior is not tested on live endpoints |
+| gitleaks (full history) | No findings from the configured secret scanner in the checked Git history |
 
-All test data is synthetic. It uses documentation IP ranges (RFC 5737), example domains, and harmless placeholder payloads. Nothing here contains customer data, internal hostnames, malware, or exploit code. The only real-world indicators are the public, defanged IOCs in [`threat-intel/korea-incidents/iocs/`](threat-intel/korea-incidents/iocs/), each tied to the official advisory that published it.
+The two YARA-L rules are reference content. CI currently provides no YARA-L compilation, event replay, or Google SecOps runtime validation. Validate them in the target platform before deployment. Synthetic sample results also do not establish production false-positive rates or complete detection coverage.
+
+All test data is synthetic. It uses documentation IP ranges (RFC 5737), synthetic private addresses (RFC 1918) for internal-network scenarios, example domains, and harmless placeholder payloads. Nothing here contains customer data, internal hostnames, malware, or exploit code. The only real-world indicators are the public, defanged IOCs in [`threat-intel/korea-incidents/iocs/`](threat-intel/korea-incidents/iocs/), each tied to the official advisory that published it.
+
+Before pushing, run [`tools/check-public.sh`](tools/README.md) with a private local denylist (금칙어 목록). It fails on missing or empty configuration, sensitive-term matches, scan errors, and missing dependencies. Private-IP exceptions apply only to documented synthetic-data paths; they never exclude files from the denylist scan. This local gate is separate from CI, which tests it with synthetic terms and does not have the private list.
 
 ---
 

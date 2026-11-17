@@ -1,4 +1,5 @@
-# Paths excluded from the private-IP check in check-public.sh, one git pathspec per line.
+# Private-IP exceptions only: literal relative file paths or directories ending in /.
+# These paths are ALWAYS included in sensitive-term scans. No glob or git pathspec syntax.
 # Only list files whose private addresses are synthetic test or example data.
 tools/check-public.sh
 tools/ioc_extract.py
