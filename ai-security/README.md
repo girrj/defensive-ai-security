@@ -25,7 +25,7 @@ How to defend LLM applications, AI agents, MCP servers, and self-hosted model in
 | Model files (YARA) | `malicious_model_pickle.yar` (3 rules) | Pickle and PyTorch files that reference code-execution callables |
 | SIEM (YARA-L) | `ai_agent_destructive_command` | Agent destructive commands correlated per host and user |
 
-Every rule above has automated tests. See the main [README](../README.md#how-everything-is-tested).
+CI checks Sigma parsing and Splunk conversion, compiles and sample-tests YARA, replays synthetic Suricata traffic, and sends synthetic requests to a local Apache + ModSecurity instance. YARA-L is reference content with no automated compilation or runtime test in CI. Validate it in Google SecOps before deployment. See the main [README](../README.md#how-everything-is-tested) for scope and limitations (검증 범위·한계).
 
 ## Where AI incidents differ from ordinary ones
 
