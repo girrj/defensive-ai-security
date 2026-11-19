@@ -22,7 +22,7 @@ python3 vuln-triage/cve_triage.py CVE-2017-10271 CVE-2025-61882 CVE-2025-61884 C
 
 - **Patch**: Oracle Critical Patch Update, October 2017, or any later WebLogic release.
 - **If you cannot patch today**: block `/wls-wsat/*` and `/_async/*` at the WAF or reverse proxy (rule [1009130](../../detections/waf/modsecurity/blue-team-waf.conf)), or remove the `wls-wsat.war` component if no application uses it.
-- **Hunt**: Java processes running WebLogic that start `sh`, `bash`, `curl` or `wget`. Hunting queries to be added.
+- **Hunt**: Review unexpected WebLogic Java child processes with the [WebLogic hunting query](hunting.md#weblogic).
 - **Why it still matters**: the 2025 card breach used an eight-year-old fix that one server never received. Old KEV-listed CVEs on internet-facing hosts need the same deadline as new ones.
 
 ### CVE-2025-61882 and CVE-2025-61884 (Oracle EBS)

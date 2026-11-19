@@ -37,7 +37,7 @@ APPM-type systems (PAM, privileged access management) hold the keys to every oth
 
 | Layer | Detection |
 | --- | --- |
-| Hunting | PAM and password vault access anomalies (to be added) |
+| Hunting | [PAM and vault anomalies](../hunting.md#pam-vault-anomalies) |
 | Forensics | [Evidence handling and preservation](../../../forensics/evidence-handling.md) |
 | IR manual | [Legal and regulatory reporting](../../../ir-manual/README.md#5-legal-and-regulatory-reporting-korea) |
 

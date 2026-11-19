@@ -49,7 +49,7 @@ Two connected problems at a mobile carrier: rogue small cells (femtocells) that 
 | WAF | Script upload deny [1009103](../../../detections/waf/modsecurity/blue-team-waf.conf), commands to script pages 1009104 |
 | EDR (Linux) | Sigma [`webshell_child_process_linux`](../../../detections/sigma/webshell_child_process_linux.yml), [`bpfdoor_pid_file_artifacts`](../../../detections/sigma/bpfdoor_pid_file_artifacts.yml), [`bpfdoor_iptables_redirect`](../../../detections/sigma/bpfdoor_iptables_redirect.yml) |
 | NDR / IDS | Suricata 9100070–72 |
-| Hunting | Device registration from unexpected networks (to be added), BPFDoor (to be added) |
+| Hunting | [Rogue device registration](../hunting.md#rogue-device-registration), [BPFDoor](../hunting.md#bpfdoor) |
 | Playbook | [Web shell compromise](../../../playbooks/web-shell-compromise.md) |
 
 ## Lessons for SOC and CERT

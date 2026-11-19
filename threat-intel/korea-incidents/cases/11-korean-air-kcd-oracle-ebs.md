@@ -49,7 +49,7 @@ All six are also in [`../iocs/iocs.csv`](../iocs/iocs.csv).
 | IDS | Suricata [9100061–62](../../../detections/suricata/blue-team.rules) (POST to UiServlet, SyncServlet), pcap-tested |
 | WAF | [1009132](../../../detections/waf/modsecurity/blue-team-waf.conf) (SyncServlet, UiServlet), 1009133 (TemplatePreviewPG), live-tested |
 | EDR (Linux) | Sigma [`linux_reverse_shell_dev_tcp`](../../../detections/sigma/linux_reverse_shell_dev_tcp.yml), [`webshell_child_process_linux`](../../../detections/sigma/webshell_child_process_linux.yml) (Java parent) |
-| Hunting | Oracle EBS exploitation (to be added) |
+| Hunting | [Oracle EBS host review](../hunting.md#oracle-ebs) |
 | Vulnerabilities | [CVE-2025-61882 / 61884](../vulnerabilities.md) |
 
 ## Lessons for SOC and CERT

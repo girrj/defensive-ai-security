@@ -35,7 +35,7 @@ Blockchain transactions are final. Detection has to happen **before signing**, o
 
 | Layer | Detection |
 | --- | --- |
-| Hunting | Hot-wallet withdrawal anomalies (to be added) (destinations outside the allow-list, bursts, off-hours) |
+| Hunting | [Hot-wallet withdrawal anomalies](../hunting.md#hot-wallet-withdrawals) |
 | Encyclopedia | Hot wallet and key custody (planned, see the [encyclopedia list](../../../encyclopedia/README.md#5-techniques-위협-영역별-방어--techniques)) |
 
 ## Lessons for SOC and CERT

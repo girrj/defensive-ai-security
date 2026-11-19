@@ -2,8 +2,6 @@
 
 A blue-team toolkit for running a SOC or CERT. It covers detection engineering across IDS, WAF, EDR, NDR, and SIEM, plus incident response, forensics, vulnerability and zero-day response, **defending AI systems** (LLM applications, agents, MCP servers, model infrastructure), and guidelines for using LLMs safely in that work.
 
-Maintained by a security operations practitioner with more than ten years in enterprise SOCs, CERT work, and managed security services.
-
 ---
 
 ## What's here
@@ -13,7 +11,7 @@ Maintained by a security operations practitioner with more than ten years in ent
 | [**detections/**](detections/) | **Sigma** (21 rules), **Suricata IDS** (31 rules), **ModSecurity WAF** (19 rules), **YARA** (13 rules in 5 files), **Google SecOps YARA-L** (2 reference rules); validation scope below |
 | [**ai-security/**](ai-security/) | **Defending AI systems**: OWASP LLM Top 10 **2026**, OWASP Agentic Top 10 2026, and MITRE ATLAS mapped to detections; LLM infrastructure hardening; MCP security checklist; a map of open-source defensive AI tools |
 | [**encyclopedia/**](encyclopedia/) | **Blue team, SOC and CERT encyclopedia** (English with Korean terms): categorized list of glossary, concept, framework, tool and technique entries, being filled in |
-| [**threat-intel/korea-incidents/**](threat-intel/korea-incidents/) | **12 public Korean breaches (2025–2026)** rewritten for defenders: timeline, root cause, related CVEs, ATT&CK mapping, the detections here that cover each one, and 61 public IOCs with sources |
+| [**threat-intel/korea-incidents/**](threat-intel/korea-incidents/) | **13 public Korean case summaries (2025–2026)** rewritten for defenders: timeline, root cause, related CVEs, ATT&CK mapping, the detections here that cover each one, and 61 public IOCs with sources |
 | [**edr/**](edr/) | EDR operations: measuring coverage, a triage method, response actions and when to use them, tuning without losing coverage |
 | [**ndr/**](ndr/) | `zeek_hunt.py` for beaconing and DNS-tunneling detection over Zeek logs, plus a network hunting guide |
 | [**hunting/**](hunting/) | Hunting queries for Google SecOps (UDM) and Splunk (SPL) |

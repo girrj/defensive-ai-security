@@ -34,7 +34,7 @@ A former employee kept a token-signing key, forged access tokens with it, and re
 
 | Layer | Detection |
 | --- | --- |
-| Hunting | Token-signing key misuse: tokens with unknown `kid`, impossible issuers, one token reading many accounts (to be added) |
+| Hunting | [Token-signing key misuse](../hunting.md#token-key-misuse) |
 | Secret scanning | `gitleaks` runs on this repo's full history in CI ([workflow](../../../.github/workflows/validate.yml)); do the same on application repos |
 | Forensics | [Evidence handling](../../../forensics/evidence-handling.md): preserve logs when ordered, and before |
 

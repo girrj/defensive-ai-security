@@ -35,7 +35,7 @@ An attacker took a developer's access key, found production keys and database cr
 | Layer | Detection |
 | --- | --- |
 | Secret scanning | `gitleaks` in CI ([workflow](../../../.github/workflows/validate.yml)) and the pre-publication [`check-public.sh`](../../../tools/check-public.sh) |
-| Hunting | Access key used from a new network, and bulk database reads (to be added) |
+| Hunting | [Access-key and bulk-read anomalies](../hunting.md#access-key-and-bulk-read) |
 | SOC | [Alert triage standard](../../../soc-operations/alert-triage-standard.md): a blocked exfiltration is an incident, not a resolved alert |
 
 ## Lessons for SOC and CERT

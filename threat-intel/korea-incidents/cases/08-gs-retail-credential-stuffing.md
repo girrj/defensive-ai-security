@@ -31,7 +31,7 @@ Attackers replayed leaked ID and password pairs against two retail websites for 
 
 | Layer | Detection |
 | --- | --- |
-| Hunting | Credential stuffing: failure rate, accounts per IP, success after failures (to be added) |
+| Hunting | [Credential-stuffing hunt](../hunting.md#credential-stuffing) |
 | WAF | Bot and scanner signals ([1009107](../../../detections/waf/modsecurity/blue-team-waf.conf)); add rate limits on login endpoints at the WAF or gateway |
 | SOC | [Detection engineering lifecycle](../../../soc-operations/detection-engineering-lifecycle.md) for tuning thresholds per site |
 
