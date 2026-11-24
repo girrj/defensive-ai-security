@@ -18,7 +18,7 @@ jobs:
 
       - name: Install validators
         run: |
-          pip install pysigma pysigma-backend-splunk yara-python pyyaml scapy
+          pip install pysigma pysigma-backend-splunk yara-python pyyaml scapy markdown-it-py
           sudo apt-get update -qq
           sudo apt-get install -y -qq suricata apache2 libapache2-mod-security2 shellcheck
 
@@ -58,6 +58,9 @@ jobs:
           python -m unittest discover -s ndr/tests -v
           python -m unittest discover -s llm-guidelines/eval/tests -v
           python -m unittest discover -s threat-intel/korea-incidents/tests -v
+
+      - name: Markdown relative links
+        run: python tools/ci/check_links.py
 
       - name: Shell scripts (shellcheck)
         run: shellcheck -S error forensics/collect/collect_linux.sh tools/check-public.sh detections/suricata/tests/run_tests.sh detections/waf/tests/run_tests.sh
