@@ -15,7 +15,12 @@ Answer four questions quickly:
 | **What could it reach?** | The agent's tools, credentials, data sources, and permissions |
 | **Is it still happening?** | Recent requests with the same pattern, the poisoned content still in the index or memory, the same user or API key |
 
-Classify the event:
+### Correlate agent actions (에이전트 행위 상관분석)
+
+- For each suspected state-changing call, use the run ID (실행 ID) and tool-call ID (도구 호출 ID) to join the orchestration trace, authorization and approval records, and the downstream service audit event. Record the agent's service identity (서비스 계정 ID), model or workflow version, and UTC timestamp.
+- Record what the agent requested, what the policy allowed, and the outcome the downstream service actually recorded. Mark the outcome unknown if the audit evidence is missing. Preserve the original records in restricted case storage and use redacted working copies for analysis.
+
+### Classify the event (사고 분류)
 
 | Type | Typical evidence | ATLAS / OWASP |
 | --- | --- | --- |
@@ -37,6 +42,11 @@ Classify the event:
 | Malicious MCP server or plugin | Remove it fleet-wide and rotate everything it could reach (see the [MCP checklist](../ai-security/mcp-security-checklist.md)) |
 
 Preserve logs, transcripts, and the poisoned content **before** you delete anything from indexes or memory. Export first, then remove.
+
+### Verify scoped revocation (범위 제한 권한 회수 검증)
+
+1. Identify the affected service identity, delegated sessions, and downstream permissions. Pause new runs on the affected workflow and revoke the smallest authorization scope that stops the harmful action. Invalidate affected sessions and cancel pending actions where supported.
+2. Confirm the revocation in the downstream service's audit records. Use a harmless permission check with a test identity or a read-only policy evaluation, and check for successful actions by the affected identity after the recorded cutoff. If actions continue or verification is unavailable, keep the workflow paused and escalate to the service owner for connector isolation.
 
 ## 3. Scope
 
@@ -61,3 +71,7 @@ Preserve logs, transcripts, and the poisoned content **before** you delete anyth
 - Which control would have stopped it: content scanning, approval, tool scoping, or access control at retrieval?
 - Were prompts, retrieval, and tool calls logged well enough to reconstruct what happened? If not, that's the first corrective action.
 - Update the threat model in [threat-mapping.md](../ai-security/threat-mapping.md) for the affected application.
+
+## References (참고 자료)
+
+- [NIST IR 8621, NIST Workshop on SI Incident Management](https://csrc.nist.gov/pubs/ir/8621/final), sections 4.1–4.3 (checked 2026-11-28). The steps above adapt workshop findings on evidence traceability and agent authorization to this playbook.
