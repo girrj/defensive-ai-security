@@ -2,6 +2,8 @@
 
 A blue-team toolkit for running a SOC or CERT. It covers detection engineering across IDS, WAF, EDR, NDR, and SIEM, plus incident response, forensics, vulnerability and zero-day response, **defending AI systems** (LLM applications, agents, MCP servers, model infrastructure), and guidelines for using LLMs safely in that work.
 
+**[Awesome Blue Team (블루팀 자료 목록)](blue-team-analyst-resources.md)** — Browse tools, references, and practice data by investigation task.
+
 Maintained by a security operations practitioner with more than ten years in enterprise SOCs, CERT work, and managed security services.
 
 ---
