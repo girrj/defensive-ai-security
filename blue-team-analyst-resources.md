@@ -2,6 +2,15 @@
 
 Tools, field guides, and practice data for investigating security alerts. For LLM and agent security, see the [AI defense tools directory](ai-security/defensive-tools.md).
 
+## SOC triage and log analysis (보안관제 초동 분석·로그 분석)
+
+| Resource | When to use it |
+| --- | --- |
+| [lnav](https://lnav.org/) · BSD-2-Clause | Review exported web or system logs in one terminal view when triaging an alert (경보 초동 분석). Filter around the alert time and inspect nearby events. Files that match no [log format](https://docs.lnav.org/en/latest/formats.html) open as plain text. |
+| [DuckDB](https://duckdb.org/docs/stable/data/json/loading_json) · MIT | Use SQL to group and correlate events (이벤트 상관분석) across local NDJSON and [Parquet](https://duckdb.org/docs/stable/data/parquet/overview) exports. Check inferred JSON column types before joining exports, especially for timestamps and host identifiers. |
+
+See the [alert triage standard](soc-operations/alert-triage-standard.md) for deciding which evidence to collect. Sources checked 2026-11-28.
+
 ## Digital forensics and incident response (디지털 포렌식·침해사고 대응)
 
 | Resource | When to use it |
